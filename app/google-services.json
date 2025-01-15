@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1098157554703",
+    "project_id": "inf2007-appdev",
+    "storage_bucket": "inf2007-appdev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098157554703:android:36dd43a66b111c2ed0377a",
+        "android_client_info": {
+          "package_name": "com.example.inf2007_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDh4UrF9tlbRsFGjBRoF_3PTBdRDFdjBHw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
