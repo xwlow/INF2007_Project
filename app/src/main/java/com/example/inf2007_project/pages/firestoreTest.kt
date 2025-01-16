@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,16 +24,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.inf2007_project.AuthState
 import com.example.inf2007_project.AuthViewModel
-import com.example.inf2007_project.TestViewModel
-import com.example.inf2007_project.testData
 
 @Composable
-fun HomePage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
-
+fun firestoreTest(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
 
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
-    var testField by remember {
+    var email by remember {
         mutableStateOf("")
     }
 
@@ -53,31 +49,18 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ){
-        Text(text = "Test", fontSize = 32.sp)
+        Text(text = "Login Page", fontSize = 32.sp)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(value = testField, onValueChange = {
-            testField = it
+        OutlinedTextField(value = email, onValueChange = {
+            email = it
         },
             label = {
-                Text(text = "Test Field")
+                Text(text = "Email")
             })
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        Button(onClick = {
-            val testData = testData(
-                testField = testField
-            )
-            testViewModel.saveData(testData, context)
-            Toast.makeText(context, testData.testField, Toast.LENGTH_SHORT).show()
-//            navController.navigate("home")
-        }) {
-            Text(text = "Add Data")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         Text(text = "Home Page", fontSize = 32.sp)
 

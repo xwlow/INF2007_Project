@@ -11,7 +11,7 @@ import com.example.inf2007_project.pages.LoginPage
 import com.example.inf2007_project.pages.SignupPage
 
 @Composable
-fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel){
+fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel){
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login", builder =  {
@@ -22,7 +22,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel){
             SignupPage(modifier, navController, authViewModel)
         }
         composable("home"){
-            HomePage(modifier, navController, authViewModel)
+            HomePage(modifier, navController, authViewModel, testViewModel)
         }
     } )
 }
