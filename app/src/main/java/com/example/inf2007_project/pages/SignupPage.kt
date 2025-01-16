@@ -42,7 +42,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
 
     LaunchedEffect(authState.value) {
         when(authState.value){
-            is AuthState.Unauthenticated -> {
+            is AuthState.Authenticated -> {
                 navController.navigate("home")
                 Toast.makeText(context, "You have successfully created an account!", Toast.LENGTH_SHORT).show()
             }
