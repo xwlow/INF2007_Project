@@ -71,7 +71,7 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
                 testField = testField
             )
             testViewModel.saveData(testData, context)
-            Toast.makeText(context, testData.testField, Toast.LENGTH_SHORT).show()
+            //Toast.makeText(context, "You have successfully logged in!", Toast.LENGTH_SHORT).show()
 //            navController.navigate("home")
         }) {
             Text(text = "Add Data")
