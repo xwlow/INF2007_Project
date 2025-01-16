@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.inf2007_project.pages.ClinicsPage
 import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
 import com.example.inf2007_project.pages.SignupPage
@@ -23,6 +24,9 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
         composable("home"){
             HomePage(modifier, navController, authViewModel, testViewModel)
+        }
+        composable("clinics"){
+            ClinicsPage(modifier, navController, authViewModel, testViewModel)
         }
     } )
 }

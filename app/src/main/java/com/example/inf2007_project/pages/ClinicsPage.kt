@@ -40,9 +40,7 @@ import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.testData
 
 @Composable
-fun HomePage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
-
-
+fun ClinicsPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     var testField by remember {
@@ -72,69 +70,9 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Test", fontSize = 32.sp)
+            Text(text = "Clinics Page", fontSize = 32.sp)
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = testField,
-                onValueChange = {
-                    testField = it
-                },
-                label = {
-                    Text(text = "Test Field")
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(onClick = {
-                val testData = testData(
-                    testField = testField
-                )
-                testViewModel.saveData(testData, context)
-            }) {
-                Text(text = "Add Data")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(text = "Home Page", fontSize = 32.sp)
-
-            TextButton(onClick = {
-                authViewModel.signout()
-            }) {
-                Text(text = "Sign Out")
-            }
-        }
-    }
-}
-
-data class BottomNavItem(val label: String, val icon: ImageVector, val route: String)
-
-@Composable
-fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(
-        BottomNavItem("Home", Icons.Default.Home, "home"),
-        BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
-    )
-
-    NavigationBar {
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = {
-                    Icon(imageVector = item.icon, contentDescription = item.label)
-                },
-                label = {
-                    Text(text = item.label)
-                },
-                selected = false, // Implement logic for tracking selected state
-                onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo("home") { inclusive = true }
-                    }
-                }
-            )
         }
     }
 }
