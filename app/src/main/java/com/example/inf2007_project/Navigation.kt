@@ -35,6 +35,5 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("notes&reminders"){
             NotesRemindersPage(modifier, navController, authViewModel, testViewModel)
         }
-        composable("document/{title}")
     } )
 }
