@@ -34,7 +34,9 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
     }
     var password by remember {
         mutableStateOf("")
-
+    }
+    var cfmPassword by remember {
+        mutableStateOf("")
     }
 
     val authState = authViewModel.authState.observeAsState()
@@ -80,10 +82,29 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
             singleLine = true
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(value = cfmPassword, onValueChange = {
+            cfmPassword = it
+        },
+            label = {
+                Text(text = "Confirm Password")
+            },
+            visualTransformation = PasswordVisualTransformation(), // Masks the input
+            singleLine = true
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            authViewModel.signup(email,password)
+            if (password == cfmPassword) {
+                authViewModel.signup(email, password)
+                Toast.makeText(context, "Account Successfully Created!", Toast.LENGTH_SHORT).show()
+                navController.navigate("Login")
+            }
+            else{
+                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            }
             //navController.navigate("login")
         }) {
             Text(text = "Create Account")
