@@ -78,31 +78,51 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
 //            }
 //            else -> Unit
     LaunchedEffect(Unit) {
-        val query = db.collection("messages")
-            .whereIn("senderId", listOf("Tw3KcTvaaON1QjJF03MPLy4VqsO2", "kJTZpd8V9TR6uOrITEOs5MImGTR2"))
-            .whereIn("recipientId", listOf("kJTZpd8V9TR6uOrITEOs5MImGTR2", "Tw3KcTvaaON1QjJF03MPLy4VqsO2"))
+        val query1 = db.collection("messages")
+            .whereEqualTo("senderId", "Tw3KcTvaaON1QjJF03MPLy4VqsO2"
+            )
+            .whereEqualTo("recipientId", "kJTZpd8V9TR6uOrITEOs5MImGTR2")
             .orderBy("timestamp")
 
-        query.addSnapshotListener { snapshot, e ->
-            if (e != null) {
-                Log.e("Messages", "Error fetching messages: ${e.message}")
-            } else {
-                snapshot?.let {
-                    val fetchedMessages = it.documents.map { document ->
+        val query2 = db.collection("messages")
+            .whereEqualTo("senderId", "kJTZpd8V9TR6uOrITEOs5MImGTR2")
+            .whereEqualTo("recipientId", "Tw3KcTvaaON1QjJF03MPLy4VqsO2"
+            )
+            .orderBy("timestamp")
+
+        query1.addSnapshotListener { snapshot1, e1 ->
+            query2.addSnapshotListener { snapshot2, e2 ->
+                if (e1 == null && e2 == null && snapshot1 != null && snapshot2 != null) {
+                    val messages1 = snapshot1.documents.map {
                         Message(
-                            message = document.getString("message") ?: "",
-                            senderId = document.getString("senderId") ?: "",
-                            recipientId = document.getString("recipientId") ?: "",
-                            timestamp = document.getTimestamp("timestamp")?.toDate().toString()
+                            message = it.getString("message") ?: "",
+                            senderId = it.getString("senderId") ?: "",
+                            recipientId = it.getString("recipientId") ?: "",
+                            timestamp = it.getTimestamp("timestamp")?.toDate().toString()
                         )
                     }
-                    messages = fetchedMessages.sortedBy { it.timestamp }
-                    Log.d("Messages", "Messages fetched: ${messages.size}")
+
+                    val messages2 = snapshot2.documents.map {
+                        Message(
+                            message = it.getString("message") ?: "",
+                            senderId = it.getString("senderId") ?: "",
+                            recipientId = it.getString("recipientId") ?: "",
+                            timestamp = it.getTimestamp("timestamp")?.toDate().toString()
+                        )
+                    }
+
+                    // Combine both query results and sort by timestamp
+                    messages = (messages1 + messages2).sortedBy { it.timestamp }
+                    for (message in messages) {
+                        Log.d("Messages", "Message: ${message.message}, Sender: ${message.senderId}, Recipient: ${message.recipientId} ,Timestamp: ${message.timestamp}")
+                    }
+
                 }
             }
         }
     }
-
+//        }
+//    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
