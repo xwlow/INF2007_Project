@@ -1,6 +1,7 @@
 package com.example.inf2007_project.pages
 
 //import android.os.Message
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -67,22 +68,7 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
     val scope = rememberCoroutineScope()
 
     // Fetch messages from Firestore
-    LaunchedEffect(Unit) {
-        db.collection("messages")
-            .orderBy("timestamp")
-            .addSnapshotListener { snapshot, e ->
-                if (e == null && snapshot != null) {
-                    val fetchedMessages = snapshot.documents.map {
-                        Message(
-                            message = it.getString("message") ?: "",
-                            senderId = it.getString("senderId") ?: "",
-                            timestamp = it.getTimestamp("timestamp")?.toDate().toString()
-                        )
-                    }
-                    messages = fetchedMessages
-                }
-            }
-    }
+
 
 //    LaunchedEffect((authState.value)) {
 //        when(authState.value){
@@ -91,8 +77,32 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
 //                Toast.makeText(context, "You have successfully signed out!", Toast.LENGTH_SHORT).show()
 //            }
 //            else -> Unit
-//        }
-//    }
+    LaunchedEffect(Unit) {
+        val query = db.collection("messages")
+            .whereIn("senderId", listOf("Tw3KcTvaaON1QjJF03MPLy4VqsO2", "kJTZpd8V9TR6uOrITEOs5MImGTR2"))
+            .whereIn("recipientId", listOf("kJTZpd8V9TR6uOrITEOs5MImGTR2", "Tw3KcTvaaON1QjJF03MPLy4VqsO2"))
+            .orderBy("timestamp")
+
+        query.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e("Messages", "Error fetching messages: ${e.message}")
+            } else {
+                snapshot?.let {
+                    val fetchedMessages = it.documents.map { document ->
+                        Message(
+                            message = document.getString("message") ?: "",
+                            senderId = document.getString("senderId") ?: "",
+                            recipientId = document.getString("recipientId") ?: "",
+                            timestamp = document.getTimestamp("timestamp")?.toDate().toString()
+                        )
+                    }
+                    messages = fetchedMessages.sortedBy { it.timestamp }
+                    Log.d("Messages", "Messages fetched: ${messages.size}")
+                }
+            }
+        }
+    }
+
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -145,6 +155,7 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
                                 val messageData = mapOf(
                                     "message" to messageText.text,
                                     "senderId" to currentUser?.uid,
+                                    "recipientId" to "Tw3KcTvaaON1QjJF03MPLy4VqsO2",
                                     "timestamp" to com.google.firebase.Timestamp.now()
                                 )
                                 db.collection("messages").add(messageData)
@@ -192,5 +203,6 @@ fun MessageItem(message: Message, isCurrentUser: Boolean) {
 data class Message(
     val message: String,
     val senderId: String,
+    val recipientId: String,
     val timestamp: String
 )
