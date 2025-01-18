@@ -39,5 +39,6 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("messages"){
             Messaging(modifier, navController, authViewModel, testViewModel)
         }
+        
     } )
 }
