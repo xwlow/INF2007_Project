@@ -1,5 +1,6 @@
 package com.example.inf2007_project.pages
 
+import android.os.Message
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -26,11 +28,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -38,6 +42,11 @@ import com.example.inf2007_project.AuthState
 import com.example.inf2007_project.AuthViewModel
 import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.testData
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
+
+data class BottomNavItem(val label: String, val icon: ImageVector, val route: String)
 
 @Composable
 fun HomePage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
@@ -48,6 +57,8 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
     var testField by remember {
         mutableStateOf("")
     }
+
+
 
     LaunchedEffect((authState.value)) {
         when(authState.value){
@@ -109,15 +120,13 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
         }
     }
 }
-
-data class BottomNavItem(val label: String, val icon: ImageVector, val route: String)
-
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
         BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
         BottomNavItem("Notes & Reminders", Icons.Filled.ThumbUp, "notes&reminders"),
+        BottomNavItem("Messages", Icons.Filled.MailOutline, "messages"),
     )
 
     NavigationBar {

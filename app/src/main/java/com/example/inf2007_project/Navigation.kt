@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.inf2007_project.pages.ClinicsPage
 import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
+import com.example.inf2007_project.pages.Messaging
 import com.example.inf2007_project.pages.NotesRemindersPage
 import com.example.inf2007_project.pages.SignupPage
 
@@ -34,6 +35,9 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
         composable("notes&reminders"){
             NotesRemindersPage(modifier, navController, authViewModel, testViewModel)
+        }
+        composable("messages"){
+            Messaging(modifier, navController, authViewModel, testViewModel)
         }
     } )
 }
