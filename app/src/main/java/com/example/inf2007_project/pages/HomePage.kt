@@ -117,6 +117,13 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
             }) {
                 Text(text = "Sign Out")
             }
+
+            // Just for me to view the page - Deric
+            TextButton(onClick = {
+                navController.navigate("queue")
+            }) {
+                Text(text = "QueuePage Sample")
+            }
         }
     }
 }

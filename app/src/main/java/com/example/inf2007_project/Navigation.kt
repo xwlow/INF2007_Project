@@ -13,6 +13,7 @@ import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
 import com.example.inf2007_project.pages.Messaging
 import com.example.inf2007_project.pages.NotesRemindersPage
+import com.example.inf2007_project.pages.QueuePage
 import com.example.inf2007_project.pages.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -38,6 +39,9 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
         composable("messages"){
             Messaging(modifier, navController, authViewModel, testViewModel)
+        }
+        composable("queue"){
+            QueuePage(modifier, navController, authViewModel, testViewModel)
         }
         
     } )
