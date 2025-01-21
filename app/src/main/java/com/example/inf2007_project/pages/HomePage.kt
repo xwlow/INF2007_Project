@@ -115,11 +115,11 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
                 Text(text = "Sign Out")
             }
 
-            // Just for me to view the page - Deric
+            // Added a clinic test page with a test API to test my QueuePage - Deric
             TextButton(onClick = {
-                navController.navigate("queue")
+                navController.navigate("clinicsTest")
             }) {
-                Text(text = "QueuePage Sample")
+                Text(text = "Clinics Test with test API Sample")
             }
         }
     }

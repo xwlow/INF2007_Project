@@ -89,7 +89,7 @@ fun LoginPage(modifier: Modifier = Modifier, navController : NavController, auth
         Button(onClick = {
             authViewModel.login(email, password)
             //Toast.makeText(context, "You have successfully logged in!", Toast.LENGTH_SHORT).show()
-//            navController.navigate("home")
+            //navController.navigate("home")
         }) {
             Text(text = "Login")
         }

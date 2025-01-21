@@ -1,6 +1,7 @@
 package com.example.inf2007_project
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -9,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.inf2007_project.pages.ClinicsPage
+import com.example.inf2007_project.pages.ClinicsPageTest
 import com.example.inf2007_project.pages.DetailPage
 import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
@@ -19,7 +21,7 @@ import com.example.inf2007_project.pages.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel){
+fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel, clinicViewModel: ClinicViewModel){
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login", builder =  {
@@ -41,8 +43,24 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("messages"){
             Messaging(modifier, navController, authViewModel, testViewModel)
         }
-        composable("queue"){
-            QueuePage(modifier, navController, authViewModel, testViewModel)
+        composable("queue/{clinicInfo}") { backStackEntry ->
+            val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
+            val (clinicName, clinicStreetName, clinicPostalCode) = clinicInfo.split("|")
+            Log.d("CLINIC", clinicName)
+            Log.d("CLINIC", clinicStreetName)
+            Log.d("CLINIC", clinicPostalCode)
+            QueuePage(
+                clinicName = clinicName ?: "Unknown Clinic",
+                clinicStreetName = clinicStreetName,
+                clinicPostalCode = clinicPostalCode,
+                modifier,
+                navController,
+                authViewModel,
+                testViewModel
+            )
+        }
+        composable("clinicsTest"){
+            ClinicsPageTest(modifier, navController, authViewModel, testViewModel, clinicViewModel)
         }
 
         // Single pages for the notes & documents
