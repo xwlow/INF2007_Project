@@ -62,6 +62,7 @@ import com.example.inf2007_project.AuthViewModel
 import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.testData
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
@@ -75,22 +76,51 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
-    val documents = remember { mutableStateListOf<Pair<String, String>>() }
-    val notes = remember { mutableStateListOf<Pair<String, String>>() }
+    val documents = remember { mutableStateListOf<Triple<String, String, String>>() }
+    val notes = remember { mutableStateListOf<Triple<String, String, String>>() }
     var isDialogOpen by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) } // Refresh trigger state
 
     LaunchedEffect(refreshTrigger) {
-        // Fetch documents
-        val documentsResult = firestore.collection("documents").get().await()
-        documents.clear()
-        documents.addAll(documentsResult.documents.mapNotNull { doc ->
-            val title = doc.getString("title")
-            val lastUpdated = doc.getString("lastUpdated")
-            if (title != null && lastUpdated != null) title to lastUpdated else null
-        })
+        // Get the current user ID
+        val currentUser = FirebaseAuth.getInstance().currentUser?.uid
 
-        Log.d("FirestoreDebug", "Documents retrieved: $documents")
+        if (currentUser != null) {
+            // Fetch documents where user_id matches the current user ID
+            val documentsResult = firestore.collection("documents")
+                .whereEqualTo("user_id", currentUser) // Filter by user_id
+                .get()
+                .await()
+
+            // Clear and populate the documents list
+            documents.clear()
+            documents.addAll(documentsResult.documents.mapNotNull { doc ->
+                val title = doc.getString("title")
+                val lastUpdated = doc.getString("lastUpdated")
+                val id = doc.id
+                if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
+            })
+
+
+            //// NOTES ////
+            val notesResult = firestore.collection("notes")
+                .whereEqualTo("user_id", currentUser) // Filter by user_id
+                .get()
+                .await()
+
+            // Clear and populate the notes list
+            notes.clear()
+            notes.addAll(notesResult.documents.mapNotNull { doc ->
+                val title = doc.getString("title")
+                val lastUpdated = doc.getString("lastUpdated")
+                val id = doc.id
+                if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
+            })
+
+            Log.d("FirestoreDebug", "Documents retrieved: $documents")
+        } else {
+            Log.e("FirestoreDebug", "No user is currently logged in!")
+        }
     }
 
     Scaffold(
@@ -116,16 +146,16 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
             )
 
             SectionHeader("Documents")
-            documents.forEach { (title, lastUpdated) ->
-                DocumentItem(title, "Last updated on $lastUpdated")
+            documents.forEach { (id, title, lastUpdated) ->
+                DocumentItem(title, "Last updated on $lastUpdated",id, navController = navController)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             SectionHeader("Notes")
             NotesTabs()
-            notes.forEach { (title, lastUpdated) ->
-                NoteItem(title, "Last updated on $lastUpdated")
+            notes.forEach { (id, title, lastUpdated) ->
+                NoteItem(title, "Last updated on $lastUpdated",id, navController = navController)
             }
 
             if (isDialogOpen) {
@@ -164,11 +194,12 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun DocumentItem(title: String, subtitle: String) {
+fun DocumentItem(title: String, subtitle: String, id: String, navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .clickable { navController.navigate("detail/documents/$id") },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -185,12 +216,12 @@ fun DocumentItem(title: String, subtitle: String) {
 }
 
 @Composable
-fun NoteItem(title: String, subtitle: String) {
+fun NoteItem(title: String, subtitle: String, id: String, navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { /* handle click */ },
+            .padding(vertical = 16.dp)
+            .clickable { navController.navigate("detail/notes/$id") },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -214,16 +245,20 @@ fun CardDialog(
 ) {
     val context = LocalContext.current
     var input by remember { mutableStateOf("") }
+    var contentInput by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val categories = listOf("Notes", "Documents")
     var selectedCategory by remember { mutableStateOf("Notes") }
     var expanded by remember { mutableStateOf(false) }
     val currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri: Uri? -> imageUri = uri }
-    )
+    // Get current user id
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser?.uid
+    if (currentUser == null) {
+        Toast.makeText(context, "Please sign in first!", Toast.LENGTH_SHORT).show()
+        return
+    }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -235,7 +270,9 @@ fun CardDialog(
 
 //                    data["category"] = selectedCategory
                     data["title"] = input
+                    data["content"] = contentInput
                     data["lastUpdated"] = currentDateTime
+                    data["user_id"] = currentUser
 
                     val collectionName = when (selectedCategory) {
                         "Notes" -> "notes"
@@ -277,6 +314,14 @@ fun CardDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("textInput")
+                )
+                TextField(
+                    value = contentInput,
+                    onValueChange = { contentInput = it },
+                    label = { Text("Content goes here...") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("contentInput")
                 )
                 Text(
                     text = "Category: $selectedCategory",

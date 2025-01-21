@@ -51,14 +51,11 @@ data class BottomNavItem(val label: String, val icon: ImageVector, val route: St
 @Composable
 fun HomePage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
 
-
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     var testField by remember {
         mutableStateOf("")
     }
-
-
 
     LaunchedEffect((authState.value)) {
         when(authState.value){

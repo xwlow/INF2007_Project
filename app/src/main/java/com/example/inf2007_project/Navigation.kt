@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.inf2007_project.pages.ClinicsPage
+import com.example.inf2007_project.pages.DetailPage
 import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
 import com.example.inf2007_project.pages.Messaging
@@ -43,6 +44,12 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("queue"){
             QueuePage(modifier, navController, authViewModel, testViewModel)
         }
-        
+
+        // Single pages for the notes & documents
+        composable("detail/{type}/{id}") { navBackStackEntry ->
+            val type = navBackStackEntry.arguments?.getString("type") ?: "notes"
+            val id = navBackStackEntry.arguments?.getString("id") ?: ""
+            DetailPage(modifier, navController, authViewModel, testViewModel,type = type, id = id)
+        }
     } )
 }
