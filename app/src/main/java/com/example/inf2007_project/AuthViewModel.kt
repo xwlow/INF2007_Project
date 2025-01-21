@@ -62,6 +62,8 @@ class AuthViewModel : ViewModel(){
                     _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
                 }
             }
+
+
     }
 
     fun signout(){

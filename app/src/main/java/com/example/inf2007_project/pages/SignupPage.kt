@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.inf2007_project.AuthState
 import com.example.inf2007_project.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun SignupPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
@@ -38,7 +40,14 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
     var cfmPassword by remember {
         mutableStateOf("")
     }
-
+    var name by remember {
+        mutableStateOf("")
+    }
+    var nric by remember {
+        mutableStateOf("")
+    }
+    val db = FirebaseFirestore.getInstance()
+    //val auth = FirebaseAuth.getInstance()
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
@@ -94,13 +103,51 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
             singleLine = true
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(value = name, onValueChange = {
+            name = it
+        },
+            label = {
+                Text(text = "Name")
+            },
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(value = nric, onValueChange = {
+            nric = it
+        },
+            label = {
+                Text(text = "NRIC")
+            },
+            singleLine = true
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
+            val data = mutableMapOf<String, Any>()
+
+//          data["category"] = selectedCategory
+            data["name"] = name
+            data["nric"] = nric
+            data["email"] = email
             if (password == cfmPassword) {
                 authViewModel.signup(email, password)
-                Toast.makeText(context, "Account Successfully Created!", Toast.LENGTH_SHORT).show()
-                navController.navigate("Login")
+                db.collection("userDetail")
+                    .add(data)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Account Created successfully!", Toast.LENGTH_SHORT).show()
+                        navController.navigate("Login")
+                    }
+                    .addOnFailureListener{e ->
+                        Toast.makeText(context, "Error adding account: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+
+//                Toast.makeText(context, "Account Successfully Created!", Toast.LENGTH_SHORT).show()
+//                navController.navigate("Login")
             }
             else{
                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
