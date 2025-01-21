@@ -134,7 +134,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
             data["name"] = name
             data["nric"] = nric
             data["email"] = email
-            if (password == cfmPassword) {
+            if (password == cfmPassword && password.length >= 6) {
                 authViewModel.signup(email, password)
                 db.collection("userDetail")
                     .add(data)
@@ -149,8 +149,11 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
 //                Toast.makeText(context, "Account Successfully Created!", Toast.LENGTH_SHORT).show()
 //                navController.navigate("Login")
             }
-            else{
+            else if(password != cfmPassword){
                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            }
+            else {
+                Toast.makeText(context, "Please ensure that your password is minimally 6 characters", Toast.LENGTH_SHORT).show()
             }
             //navController.navigate("login")
         }) {
