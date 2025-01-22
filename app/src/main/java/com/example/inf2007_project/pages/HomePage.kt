@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MailOutline
@@ -115,11 +116,11 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
                 Text(text = "Sign Out")
             }
 
-            // Just for me to view the page - Deric
+            // Added a clinic test page with a test API to test my QueuePage - Deric
             TextButton(onClick = {
-                navController.navigate("queue")
+                navController.navigate("clinicsTest")
             }) {
-                Text(text = "QueuePage Sample")
+                Text(text = "Clinics Test with test API Sample")
             }
         }
     }
@@ -130,7 +131,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem("Home", Icons.Default.Home, "home"),
         BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
         BottomNavItem("Notes & Reminders", Icons.Filled.ThumbUp, "notes&reminders"),
-        BottomNavItem("Messages", Icons.Filled.MailOutline, "messages"),
+        BottomNavItem("Contacts", Icons.Filled.Call, "contacts"),
     )
 
     NavigationBar {

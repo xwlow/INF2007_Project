@@ -2,6 +2,7 @@ package com.example.inf2007_project
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +24,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.lang.StringBuilder
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,14 +37,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val authViewModel : AuthViewModel by viewModels()
         val testViewModel: TestViewModel by viewModels()
+        val clinicViewModel: ClinicViewModel by viewModels()
         setContent {
             INF2007_ProjectTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel)
+                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel, clinicViewModel = clinicViewModel)
                 }
             }
         }
         testFirestoreConnection(this)
+        //getMyData()
     }
 
 
@@ -66,5 +75,35 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+//    private fun getMyData() {
+//        val retrofitBuilder = Retrofit.Builder()
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .baseUrl("https://data.gov.sg/api/action/")
+//            .build()
+//            .create(ApiInterfaceClinic::class.java)
+//
+//        val retrofitData = retrofitBuilder.getData()
+//        Log.d("YEET", "NIHAO")
+//        retrofitData.enqueue(object : Callback<ApiResponse> {
+//            override fun onResponse(
+//                call: Call<ApiResponse>,
+//                response: Response<ApiResponse>
+//            ) {
+//                val responseBody = response.body()?.result?.records ?: return
+//
+//                val myStringBuilder = StringBuilder()
+//                for (myData in responseBody) {
+//                    myStringBuilder.append(myData.name)
+//                    myStringBuilder.append("\n")
+//                }
+//                Log.d("YEET", myStringBuilder.toString())
+//            }
+//
+//            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
+//                Log.d("YEET", "Error Message: " + t.message)
+//            }
+//        })
+//    }
 }
 
