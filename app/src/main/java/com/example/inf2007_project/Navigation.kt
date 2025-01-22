@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.inf2007_project.pages.ClinicsPage
 import com.example.inf2007_project.pages.ClinicsPageTest
+import com.example.inf2007_project.pages.ContactTest
 import com.example.inf2007_project.pages.DetailPage
 import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
@@ -68,6 +69,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
             val type = navBackStackEntry.arguments?.getString("type") ?: "notes"
             val id = navBackStackEntry.arguments?.getString("id") ?: ""
             DetailPage(modifier, navController, authViewModel, testViewModel,type = type, id = id)
+        }
+
+        composable("contacts"){
+            ContactTest(modifier, navController, authViewModel, testViewModel)
         }
     } )
 }

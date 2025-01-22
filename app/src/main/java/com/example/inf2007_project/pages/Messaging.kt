@@ -66,6 +66,7 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
     val scope = rememberCoroutineScope()
+    val recipientId = RecipientHolder.recipientId
 
     // Fetch messages from Firestore
 
@@ -78,15 +79,19 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
 //            }
 //            else -> Unit
     LaunchedEffect(Unit) {
+        if (recipientId != null) {
+            Log.d("recipientId", recipientId)
+            currentUser?.uid?.let { Log.d("senderId", it) }
+        }
         val query1 = db.collection("messages")
-            .whereEqualTo("senderId", "Tw3KcTvaaON1QjJF03MPLy4VqsO2"
+            .whereEqualTo("senderId", currentUser?.uid
             )
-            .whereEqualTo("recipientId", "kJTZpd8V9TR6uOrITEOs5MImGTR2")
+            .whereEqualTo("recipientId", recipientId)
             .orderBy("timestamp")
 
         val query2 = db.collection("messages")
-            .whereEqualTo("senderId", "kJTZpd8V9TR6uOrITEOs5MImGTR2")
-            .whereEqualTo("recipientId", "Tw3KcTvaaON1QjJF03MPLy4VqsO2"
+            .whereEqualTo("senderId", recipientId)
+            .whereEqualTo("recipientId", currentUser?.uid
             )
             .orderBy("timestamp")
 
@@ -175,11 +180,12 @@ fun Messaging(modifier: Modifier = Modifier, navController : NavController, auth
                                 val messageData = mapOf(
                                     "message" to messageText.text,
                                     "senderId" to currentUser?.uid,
-                                    "recipientId" to "Tw3KcTvaaON1QjJF03MPLy4VqsO2",
+                                    "recipientId" to recipientId,
                                     "timestamp" to com.google.firebase.Timestamp.now()
                                 )
                                 db.collection("messages").add(messageData)
                                 messageText = TextFieldValue("")
+                                Log.d("Message Sent", "Message has been sent")
                             }
                         }
                     }
