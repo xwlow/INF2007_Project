@@ -40,6 +40,8 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,6 +71,7 @@ import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.navigation.compose.rememberNavController
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -184,6 +187,7 @@ fun NotesTabs() {
         }
     }
 }
+
 @Composable
 fun SectionHeader(title: String) {
     Text(
@@ -195,44 +199,79 @@ fun SectionHeader(title: String) {
 
 @Composable
 fun DocumentItem(title: String, subtitle: String, id: String, navController: NavController) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { navController.navigate("detail/documents/$id") },
-        verticalAlignment = Alignment.CenterVertically
+            .clickable { navController.navigate("detail/notes/$id") },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.ThumbUp,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column {
-            Text(text = title, style = MaterialTheme.typography.bodySmall)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.ThumbUp,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge)
+                Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(vertical = 8.dp)
+//            .clickable { navController.navigate("detail/documents/$id") },
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Icon(
+//            imageVector = Icons.Default.ThumbUp,
+//            contentDescription = null,
+//            modifier = Modifier.size(24.dp)
+//        )
+//        Spacer(modifier = Modifier.width(8.dp))
+//        Column {
+//            Text(text = title, style = MaterialTheme.typography.bodySmall)
+//            Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+//        }
+//    }
+//}
 
 @Composable
 fun NoteItem(title: String, subtitle: String, id: String, navController: NavController) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = 8.dp)
             .clickable { navController.navigate("detail/notes/$id") },
-        verticalAlignment = Alignment.CenterVertically
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.ThumbUp,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column {
-            Text(text = title, style = MaterialTheme.typography.bodySmall)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.ThumbUp,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge)
+                Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
