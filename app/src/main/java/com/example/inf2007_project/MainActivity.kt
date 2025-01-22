@@ -37,16 +37,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val authViewModel : AuthViewModel by viewModels()
         val testViewModel: TestViewModel by viewModels()
-        val clinicViewModel: ClinicViewModel by viewModels()
+        val nearbySearchViewModel: NearbySearchViewModel by viewModels()
         setContent {
             INF2007_ProjectTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel, clinicViewModel = clinicViewModel)
+                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel, nearbySearchViewModel = nearbySearchViewModel)
                 }
             }
         }
         testFirestoreConnection(this)
-        //getMyData()
     }
 
 
@@ -76,34 +75,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    private fun getMyData() {
-//        val retrofitBuilder = Retrofit.Builder()
-//            .addConverterFactory(GsonConverterFactory.create())
-//            .baseUrl("https://data.gov.sg/api/action/")
-//            .build()
-//            .create(ApiInterfaceClinic::class.java)
-//
-//        val retrofitData = retrofitBuilder.getData()
-//        Log.d("YEET", "NIHAO")
-//        retrofitData.enqueue(object : Callback<ApiResponse> {
-//            override fun onResponse(
-//                call: Call<ApiResponse>,
-//                response: Response<ApiResponse>
-//            ) {
-//                val responseBody = response.body()?.result?.records ?: return
-//
-//                val myStringBuilder = StringBuilder()
-//                for (myData in responseBody) {
-//                    myStringBuilder.append(myData.name)
-//                    myStringBuilder.append("\n")
-//                }
-//                Log.d("YEET", myStringBuilder.toString())
-//            }
-//
-//            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-//                Log.d("YEET", "Error Message: " + t.message)
-//            }
-//        })
-//    }
 }
 

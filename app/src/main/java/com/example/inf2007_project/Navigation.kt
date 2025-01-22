@@ -22,7 +22,7 @@ import com.example.inf2007_project.pages.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel, clinicViewModel: ClinicViewModel){
+fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel){
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login", builder =  {
@@ -46,22 +46,16 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
         composable("queue/{clinicInfo}") { backStackEntry ->
             val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
-            val (clinicName, clinicStreetName, clinicPostalCode) = clinicInfo.split("|")
-            Log.d("CLINIC", clinicName)
-            Log.d("CLINIC", clinicStreetName)
-            Log.d("CLINIC", clinicPostalCode)
+            val (clinicName, clinicStreetName) = clinicInfo.split("|")
             QueuePage(
                 clinicName = clinicName ?: "Unknown Clinic",
                 clinicStreetName = clinicStreetName,
-                clinicPostalCode = clinicPostalCode,
                 modifier,
-                navController,
-                authViewModel,
-                testViewModel
+                navController
             )
         }
         composable("clinicsTest"){
-            ClinicsPageTest(modifier, navController, authViewModel, testViewModel, clinicViewModel)
+            ClinicsPageTest(modifier, navController, authViewModel, testViewModel, nearbySearchViewModel)
         }
 
         // Single pages for the notes & documents

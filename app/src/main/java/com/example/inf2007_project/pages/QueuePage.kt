@@ -1,8 +1,6 @@
 package com.example.inf2007_project.pages
 
-import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,20 +28,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.inf2007_project.AuthViewModel
 import com.example.inf2007_project.R
-import com.example.inf2007_project.TestViewModel
-import com.example.inf2007_project.testData
 
 @Composable
 fun QueuePage(
     clinicName: String,
     clinicStreetName: String,
-    clinicPostalCode: String,
     modifier: Modifier = Modifier,
     navController : NavController,
-    authViewModel: AuthViewModel,
-    testViewModel: TestViewModel
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -51,7 +43,7 @@ fun QueuePage(
             BottomNavigationBar(navController)
         }
     ) { paddingValues ->
-        Column (
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -59,7 +51,7 @@ fun QueuePage(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             //Place Holder
-            Card (
+            Card(
                 modifier = Modifier
                     .padding(8.dp), // Adds padding around the card
                 elevation = CardDefaults.elevatedCardElevation(4.dp), // Adds shadow/elevation to make it look like a card
@@ -81,17 +73,25 @@ fun QueuePage(
             )
             Text("People are currently ahead of you")
 
-            Card (
+            Card(
                 modifier = modifier
                     .fillMaxWidth()
-                    .padding(top = 20.dp, start = 8.dp, end = 8.dp, bottom = 8.dp), // Apply padding only to the Card itself
+                    .padding(
+                        top = 20.dp,
+                        start = 8.dp,
+                        end = 8.dp,
+                        bottom = 8.dp
+                    ), // Apply padding only to the Card itself
             ) {
-                Column (
+                Column(
                     modifier = Modifier.fillMaxWidth() // Reset modifier for the Column
                 ) {
-                    Row (
+                    Row(
                         modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp), // Padding only on the left and right
+                            .padding(
+                                start = 8.dp,
+                                end = 8.dp
+                            ), // Padding only on the left and right
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -131,19 +131,25 @@ fun QueuePage(
                         Card(
                             modifier = Modifier
                                 .padding(8.dp)
-                                .size(width = 200.dp, height = 150.dp), // Adds padding around the card
+                                .size(
+                                    width = 200.dp,
+                                    height = 150.dp
+                                ), // Adds padding around the card
                             elevation = CardDefaults.elevatedCardElevation(4.dp), // Add shadow
                             shape = RoundedCornerShape(8.dp) // Add rounded corners
                         ) {
                             Text("Address:")
                             Text(clinicStreetName)
-                            Text(clinicPostalCode)
+                            Text("No postal code for this api sadly")
                         }
 
-                        Card (
+                        Card(
                             modifier = Modifier
                                 .padding(8.dp)
-                                .size(width = 150.dp, height = 150.dp), // Adds padding around the card
+                                .size(
+                                    width = 150.dp,
+                                    height = 150.dp
+                                ), // Adds padding around the card
                             elevation = CardDefaults.elevatedCardElevation(4.dp), // Add shadow
                             shape = RoundedCornerShape(8.dp) // Add rounded corners
                         ) {
@@ -157,4 +163,3 @@ fun QueuePage(
         }
     }
 }
-
