@@ -1,5 +1,6 @@
 package com.example.inf2007_project.pages
 
+import android.graphics.Color.alpha
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -10,6 +11,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -42,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +76,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import androidx.navigation.compose.rememberNavController
+import com.google.android.play.core.integrity.x
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -362,32 +367,65 @@ fun CardDialog(
                         .fillMaxWidth()
                         .testTag("contentInput")
                 )
-                Text(
-                    text = "Category: $selectedCategory",
+//                Text(
+//                    text = "Category: $selectedCategory",
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .clickable { expanded = true }
+//                        .padding(vertical = 8.dp)
+//                        .testTag("CategoryDropdown"),
+//                    style = MaterialTheme.typography.bodyMedium
+//                )
+//                DropdownMenu(
+//                    expanded = expanded,
+//                    onDismissRequest = { expanded = false }
+//                ) {
+//                    categories.forEach { category ->
+//                        DropdownMenuItem(
+//                            onClick = {
+//                                selectedCategory = category
+//                                expanded = false
+//                            },
+//                            text = { Text(category) }
+//                        )
+//                    }
+//                }
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = true }
-                        .padding(vertical = 8.dp)
-                        .testTag("CategoryDropdown"),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                        .padding(16.dp)
                 ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            onClick = {
-                                selectedCategory = category
-                                expanded = false
-                            },
-                            text = { Text(category) }
-                        )
+                    Text(
+                        text = "Category: $selectedCategory",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = true }
+                            .padding(end = 32.dp)
+                        //style = MaterialTheme.typography.bodyMedium
+                    )
+                        IconButton(onClick = { expanded = !expanded }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Category: $selectedCategory"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            categories.forEach { category ->
+                                DropdownMenuItem(
+                                    onClick = {
+                                        selectedCategory = category
+                                        expanded = false
+                                    },
+                                    text = { Text(category) }
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-
-            }
         }
     )
 }
