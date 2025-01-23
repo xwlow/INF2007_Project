@@ -21,7 +21,6 @@ class ClinicViewModel : ViewModel() {
 
     // Function to fetch data from the API
     fun fetchClinicsData() {
-
         // Create Retrofit instance with the custom client
         val retrofitBuilder = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())

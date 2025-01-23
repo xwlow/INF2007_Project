@@ -1,5 +1,7 @@
 package com.example.inf2007_project.pages
 
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,15 +31,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.inf2007_project.QueueViewModel
 import com.example.inf2007_project.R
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun QueuePage(
+    viewModel: QueueViewModel,
     clinicName: String,
     clinicStreetName: String,
+    clinicID: String,
     modifier: Modifier = Modifier,
     navController : NavController,
 ) {
+    val isCheckingQueue = viewModel.isCheckingQueue
+    val isAddingQueue = viewModel.isAddingQueue
+    val hasQueue = viewModel.hasQueue
+    val queueCount = viewModel.queueCount
+    val checkQueueError = viewModel.checkQueueError
+    val addQueueError = viewModel.addQueueError
+
+    LaunchedEffect(Unit) {
+        viewModel.checkQueue(clinicID)
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
@@ -57,7 +75,7 @@ fun QueuePage(
                 elevation = CardDefaults.elevatedCardElevation(4.dp), // Adds shadow/elevation to make it look like a card
             ) {
                 Text(
-                    "NUMBER: 3012 ",
+                    "NUMBER: 3012",
                     modifier = Modifier
                         .padding(16.dp) // Adds padding inside the card
                         .align(Alignment.CenterHorizontally), // Centers the text horizontally inside the card
@@ -65,12 +83,22 @@ fun QueuePage(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+            if (isCheckingQueue) {
+                Text(text = "Loading...", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            } else if (checkQueueError != null) {
+                Text(
+                    text = "Error",
+                    fontSize = 50.sp, // Increase the size of the text
+                    fontWeight = FontWeight.Bold, // Make the text bold
+                )
+            } else {
+                Text(
+                    text = queueCount?.toString() ?: "0",
+                    fontSize = 50.sp, // Increase the size of the text
+                    fontWeight = FontWeight.Bold, // Make the text bold
+                )
+            }
 
-            Text(
-                "15",
-                fontSize = 50.sp, // Increase the size of the text
-                fontWeight = FontWeight.Bold, // Make the text bold
-            )
             Text("People are currently ahead of you")
 
             Card(
@@ -107,7 +135,11 @@ fun QueuePage(
 
                         Button(
                             onClick = {
-                                // TODO: Cancel appointment
+                                val currentUser = FirebaseAuth.getInstance().currentUser?.uid
+                                if (currentUser != null) {
+                                    viewModel.deleteUserFromQueue(clinicID, currentUser)
+                                    navController.popBackStack()
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.Red, // Set the background color to red

@@ -130,7 +130,7 @@ fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
         BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
-        BottomNavItem("Notes & Reminders", Icons.Filled.ThumbUp, "notes&reminders"),
+        BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
         BottomNavItem("Contacts", Icons.Filled.Call, "contacts"),
     )
 

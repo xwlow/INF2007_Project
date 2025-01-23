@@ -2,6 +2,7 @@ package com.example.inf2007_project
 
 import Place
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,8 +13,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class NearbySearchViewModel : ViewModel() {
-    private val _places = mutableListOf<Place>()
-    val places: List<Place> get() = _places
+    private val _places = mutableStateOf<List<Place>>(emptyList())
+    val places: List<Place> get() = _places.value
 
     // For debugging
     val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
@@ -34,9 +35,8 @@ class NearbySearchViewModel : ViewModel() {
                 // Make the API call
                 val response = retrofit.getNearbyPlaces(keyword, location, radius, apiKey)
                 if (response.status == "OK") {
-                    _places.clear()
-                    _places.addAll(response.results)
-                    Log.d("NEARBY", "Fetched places: ${_places.size}")
+                    _places.value = response.results
+                    Log.d("NEARBY", "Fetched places: ${_places.value.size}")
                 } else {
                     Log.e("NEARBY", "API error: ${response.status} - ${response.errorMessage}")
                 }

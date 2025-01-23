@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.inf2007_project.pages.ClinicsDetail
 import com.example.inf2007_project.pages.ClinicsPage
 import com.example.inf2007_project.pages.ClinicsPageTest
 import com.example.inf2007_project.pages.ContactTest
@@ -22,7 +23,7 @@ import com.example.inf2007_project.pages.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel){
+fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel, queueViewModel: QueueViewModel){
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login", builder =  {
@@ -46,12 +47,14 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
         composable("queue/{clinicInfo}") { backStackEntry ->
             val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
-            val (clinicName, clinicStreetName) = clinicInfo.split("|")
+            val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
             QueuePage(
+                viewModel = queueViewModel,
                 clinicName = clinicName ?: "Unknown Clinic",
                 clinicStreetName = clinicStreetName,
-                modifier,
-                navController
+                clinicID = clinicID,
+                modifier = Modifier,
+                navController = navController
             )
         }
         composable("clinicsTest"){
@@ -63,6 +66,20 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
             val type = navBackStackEntry.arguments?.getString("type") ?: "notes"
             val id = navBackStackEntry.arguments?.getString("id") ?: ""
             DetailPage(modifier, navController, authViewModel, testViewModel,type = type, id = id)
+        }
+
+        // Single pages for the clinics
+        composable("clinic/{clinicInfo}") { backStackEntry ->
+            val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
+            val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
+            ClinicsDetail(
+                viewModel = queueViewModel,
+                clinicName = clinicName ?: "Unknown Clinic",
+                clinicStreetName = clinicStreetName,
+                clinicID = clinicID,
+                modifier = Modifier,
+                navController = navController
+            )
         }
 
         composable("contacts"){

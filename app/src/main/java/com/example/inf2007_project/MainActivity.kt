@@ -38,10 +38,11 @@ class MainActivity : ComponentActivity() {
         val authViewModel : AuthViewModel by viewModels()
         val testViewModel: TestViewModel by viewModels()
         val nearbySearchViewModel: NearbySearchViewModel by viewModels()
+        val queueViewModel: QueueViewModel by viewModels()
         setContent {
             INF2007_ProjectTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel, nearbySearchViewModel = nearbySearchViewModel)
+                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel, nearbySearchViewModel = nearbySearchViewModel, queueViewModel = queueViewModel)
                 }
             }
         }

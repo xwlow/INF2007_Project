@@ -7,7 +7,8 @@ data class NearbySearchResponse(
 data class Place(
     val name: String,
     val vicinity: String,
-    val geometry: Geometry
+    val geometry: Geometry,
+    val place_id: String
 )
 
 data class Geometry(

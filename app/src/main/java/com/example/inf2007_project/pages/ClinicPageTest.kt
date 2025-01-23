@@ -27,11 +27,6 @@ import com.example.inf2007_project.TestViewModel
 
 @Composable
 fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel) {
-//    var location by remember { mutableStateOf("1.3521,103.8198") } // Example: Singapore's coordinates
-//    var radius by remember { mutableStateOf(1500) }
-//    var type by remember { mutableStateOf("restaurant") }
-//    val apiKey = "YOUR_API_KEY"
-
     // Sample test inputs
     val keyword = "clinic"
     val location = "1.4039679,103.7373203"
@@ -78,8 +73,8 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
                     items(places) { place ->
                         Button(
                             onClick = {
-                                val encodedClinicInfo = Uri.encode("${place.name}|${place.vicinity}")
-                                navController.navigate("queue/$encodedClinicInfo")
+                                val encodedClinicInfo = Uri.encode("${place.name}|${place.vicinity}|${place.place_id}")
+                                navController.navigate("clinic/$encodedClinicInfo")
                             },
                         ) {
                             Text(text = place.name + " " +place.vicinity)
