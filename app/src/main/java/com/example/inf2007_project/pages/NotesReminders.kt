@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -396,13 +397,19 @@ fun CardDialog(
                 ) {
                     Text(
                         text = "Category: $selectedCategory",
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { expanded = true }
+                            .align(Alignment.Center)
                             .padding(end = 32.dp)
                         //style = MaterialTheme.typography.bodyMedium
                     )
-                        IconButton(onClick = { expanded = !expanded }) {
+                        IconButton(
+                            onClick = { expanded = !expanded },
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                        ) {
                             Icon(
                                 Icons.Default.MoreVert,
                                 contentDescription = "Category: $selectedCategory"
