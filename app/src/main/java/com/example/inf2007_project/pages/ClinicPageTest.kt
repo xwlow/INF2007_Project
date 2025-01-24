@@ -1,7 +1,10 @@
 package com.example.inf2007_project.pages
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,32 +16,69 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.location.LocationManagerCompat.getCurrentLocation
 import androidx.navigation.NavController
 import com.example.inf2007_project.AuthViewModel
 import com.example.inf2007_project.ClinicViewModel
 import com.example.inf2007_project.NearbySearchViewModel
 import com.example.inf2007_project.TestViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 
 @Composable
 fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel) {
-    // Sample test inputs
     val keyword = "clinic"
-    val location = "1.4039679,103.7373203"
-    val radius = 1000
+    val radius = 500
     val apiKey = "AIzaSyDZ7GHGvGgfAcldVbm8-zrM4Fghsds89CA"
+    val context = LocalContext.current
+    val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+
+    // State variables
+    var location by remember { mutableStateOf("Unknown location") }
+    var locationFetched by remember { mutableStateOf(false) }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Fetch current location
+            startLocationUpdates(fusedLocationClient) { currentLocation ->
+                location = currentLocation
+                locationFetched = true
+            }
+        } else {
+            location = "Permission Denied"
+        }
+    }
+
     // Fetch clinics data when the composable is launched
     LaunchedEffect(Unit) {
-        nearbySearchViewModel.fetchNearbyPlaces(keyword, location, radius, apiKey)
+        locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    // Re-fetch clinics whenever the location is updated
+    LaunchedEffect(location) {
+        if (locationFetched && location != "Permission Denied" && location != "Unknown location") {
+            // Log the updated location
+            Log.d("Location", location)
+            // Call the API to fetch nearby clinics
+            nearbySearchViewModel.fetchNearbyPlaces(keyword, location, radius, apiKey)
+        }
     }
 
     // Observe the clinics data
     val places = nearbySearchViewModel.places
+    Log.d("Fetched Clinics", places.toString())
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -67,8 +107,7 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
                     item {
                         Text("Loading clinics data...")
                     }
-                }
-                else {
+                } else {
                     // Use the 'items' function to iterate over places
                     items(places) { place ->
                         Button(
@@ -77,11 +116,58 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
                                 navController.navigate("clinic/$encodedClinicInfo")
                             },
                         ) {
-                            Text(text = place.name + " " +place.vicinity)
+                            Text(text = place.name + " " + place.vicinity)
                         }
                     }
                 }
             }
         }
     }
+}
+//
+//@SuppressLint("MissingPermission")
+//fun getCurrentLocation(
+//    fusedLocationClient: FusedLocationProviderClient,
+//    onLocationReceived: (String) -> Unit
+//) {
+//    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+//        if (location != null) {
+//            val latitude = location.latitude
+//            val longitude = location.longitude
+//            onLocationReceived("$latitude,$longitude")
+//            Log.d("Coordinates", onLocationReceived.toString())
+//        } else {
+//            onLocationReceived("Unable to retrieve location")
+//            Log.d("Coordinates", "Unable to retrieve location")
+//        }
+//    }
+//}
+
+@SuppressLint("MissingPermission") // Ensure permissions are granted before calling this method
+fun startLocationUpdates(
+    fusedLocationClient: FusedLocationProviderClient,
+    onLocationUpdated: (String) -> Unit
+) {
+    val locationRequest = com.google.android.gms.location.LocationRequest.Builder(
+        //        interval = 5000 // Set the desired update interval (in milliseconds)
+//        fastestInterval = 2000 // Set the fastest interval for location updates
+//        priority = com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+        Priority.PRIORITY_HIGH_ACCURACY,
+        5000).build()
+
+
+
+    val locationCallback = object : com.google.android.gms.location.LocationCallback() {
+        override fun onLocationResult(locationResult: com.google.android.gms.location.LocationResult) {
+            val location = locationResult.lastLocation
+            if (location != null) {
+                val latitude = location.latitude
+                val longitude = location.longitude
+                onLocationUpdated("$latitude,$longitude")
+                Log.d("DynamicLocation", "Lat: $latitude, Long: $longitude")
+            }
+        }
+    }
+
+    fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
 }

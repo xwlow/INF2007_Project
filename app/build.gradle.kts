@@ -120,6 +120,8 @@ dependencies {
         implementation(libs.androidx.runtime.livedata)
         implementation(libs.firebase.database)
         implementation(libs.firebase.firestore)
+        implementation("com.google.android.gms:play-services-location:21.3.0")
+        implementation(libs.accompanist.permissions)
         testImplementation(libs.junit)
         androidTestImplementation(libs.androidx.junit)
         androidTestImplementation(libs.androidx.espresso.core)
