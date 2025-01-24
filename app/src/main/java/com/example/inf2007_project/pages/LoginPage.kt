@@ -40,6 +40,8 @@ fun LoginPage(modifier: Modifier = Modifier, navController : NavController, auth
 
     }
 
+    val buttonEnable = email.isNotEmpty() && password.isNotEmpty()
+
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
@@ -90,7 +92,7 @@ fun LoginPage(modifier: Modifier = Modifier, navController : NavController, auth
             authViewModel.login(email, password)
             //Toast.makeText(context, "You have successfully logged in!", Toast.LENGTH_SHORT).show()
             //navController.navigate("home")
-        }) {
+        }, enabled = buttonEnable) {
             Text(text = "Login")
         }
 

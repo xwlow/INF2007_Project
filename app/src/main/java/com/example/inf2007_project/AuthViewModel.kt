@@ -1,17 +1,24 @@
 package com.example.inf2007_project
 
 import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthViewModel : ViewModel(){
 
     private val auth : FirebaseAuth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+    //val auth = FirebaseAuth.getInstance()
+    //val context = LocalContext.current
 
     private val _authState = MutableLiveData<AuthState>()
     val authState : LiveData<AuthState> = _authState
+    private val _userActionState = MutableLiveData<String>()
+    val userActionState: LiveData<String> get() = _userActionState
 
     init{
         checkAuthStatus()
@@ -65,6 +72,31 @@ class AuthViewModel : ViewModel(){
 
 
     }
+
+//    fun addUserDetails(name: String, nric: String, email: String) {
+//        if (name.isBlank() || nric.isBlank() || email.isBlank()) {
+//            _userActionState.value = "All fields are required!"
+//            return
+//        }
+//
+//        val data = mapOf(
+//            "name" to name,
+//            "nric" to nric,
+//            "email" to email
+//        )
+//
+//        val documentId = email.lowercase()
+//
+//        db.collection("userDetail").document(documentId).set(data)
+//            .addOnSuccessListener {
+//                _userActionState.value = "Account created successfully!"
+//                navController.navigate("Login")
+//            }
+//            .addOnFailureListener { e ->
+//                _userActionState.value = "Error adding account: ${e.message}"
+//            }
+//    }
+
 
     fun signout(){
         auth.signOut()

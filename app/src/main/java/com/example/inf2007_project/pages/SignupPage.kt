@@ -31,6 +31,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun SignupPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
+
+
+
     var email by remember {
         mutableStateOf("")
     }
@@ -46,6 +49,9 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
     var nric by remember {
         mutableStateOf("")
     }
+    val buttonEnable = email.isNotEmpty() && password.isNotEmpty() && cfmPassword.isNotEmpty() && name.isNotEmpty() && nric.isNotEmpty()
+
+
     val db = FirebaseFirestore.getInstance()
     //val auth = FirebaseAuth.getInstance()
     val authState = authViewModel.authState.observeAsState()
@@ -156,7 +162,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
                 Toast.makeText(context, "Please ensure that your password is minimally 6 characters", Toast.LENGTH_SHORT).show()
             }
             //navController.navigate("login")
-        }) {
+        }, enabled = buttonEnable) {
             Text(text = "Create Account")
         }
         Spacer(modifier = Modifier.height(16.dp))
