@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -132,7 +133,10 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
         BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
         BottomNavItem("Contacts", Icons.Filled.Call, "contacts"),
+
         BottomNavItem("Consultations", Icons.Filled.ThumbUp, "consultations")
+
+        BottomNavItem("Profile", Icons.Filled.Person, "profile")
     )
 
     NavigationBar {
