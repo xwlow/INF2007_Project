@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.inf2007_project.pages.ClinicsDetail
 import com.example.inf2007_project.pages.ClinicsPage
 import com.example.inf2007_project.pages.ClinicsPageTest
+import com.example.inf2007_project.pages.ConsultationsPage
 import com.example.inf2007_project.pages.ContactTest
 import com.example.inf2007_project.pages.DetailPage
 import com.example.inf2007_project.pages.HomePage
@@ -84,6 +85,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
 
         composable("contacts"){
             ContactTest(modifier, navController, authViewModel, testViewModel)
+        }
+
+        composable("consultations"){
+            ConsultationsPage(modifier, navController, authViewModel, testViewModel)
         }
     } )
 }

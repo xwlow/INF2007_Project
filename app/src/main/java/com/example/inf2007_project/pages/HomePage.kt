@@ -132,6 +132,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
         BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
         BottomNavItem("Contacts", Icons.Filled.Call, "contacts"),
+        BottomNavItem("Consultations", Icons.Filled.ThumbUp, "consultations")
     )
 
     NavigationBar {
