@@ -164,7 +164,7 @@ fun startLocationUpdates(
                 val latitude = location.latitude
                 val longitude = location.longitude
                 onLocationUpdated("$latitude,$longitude")
-                Log.d("DynamicLocation", "Lat: $latitude, Long: $longitude")
+                Log.d("DynamicLocation", "$latitude,$longitude")
             }
         }
     }
