@@ -17,6 +17,7 @@ import com.example.inf2007_project.pages.HomePage
 import com.example.inf2007_project.pages.LoginPage
 import com.example.inf2007_project.pages.Messaging
 import com.example.inf2007_project.pages.NotesRemindersPage
+import com.example.inf2007_project.pages.ProfilePage
 import com.example.inf2007_project.pages.QueuePage
 import com.example.inf2007_project.pages.SignupPage
 
@@ -68,5 +69,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("contacts"){
             ContactTest(modifier, navController, authViewModel, testViewModel)
         }
+
+        composable("profile") {
+            ProfilePage(modifier, navController, authViewModel)
+        }
+
     } )
 }
