@@ -153,7 +153,7 @@ fun startLocationUpdates(
 //        fastestInterval = 2000 // Set the fastest interval for location updates
 //        priority = com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
         Priority.PRIORITY_HIGH_ACCURACY,
-        5000).build()
+        5000).setMinUpdateDistanceMeters(50f).setMinUpdateIntervalMillis(2000).build()
 
 
 
