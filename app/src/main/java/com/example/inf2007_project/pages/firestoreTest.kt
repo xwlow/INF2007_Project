@@ -22,8 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.inf2007_project.AuthState
-import com.example.inf2007_project.AuthViewModel
+import com.example.inf2007_project.uam.AuthState
+import com.example.inf2007_project.uam.AuthViewModel
 
 @Composable
 fun firestoreTest(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){

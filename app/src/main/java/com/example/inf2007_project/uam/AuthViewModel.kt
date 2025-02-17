@@ -1,4 +1,4 @@
-package com.example.inf2007_project
+package com.example.inf2007_project.uam
 
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext

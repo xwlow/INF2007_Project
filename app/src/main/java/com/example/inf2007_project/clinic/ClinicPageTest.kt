@@ -1,4 +1,4 @@
-package com.example.inf2007_project.pages
+package com.example.inf2007_project.clinic
 
 import android.annotation.SuppressLint
 import android.net.Uri
@@ -25,12 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.location.LocationManagerCompat.getCurrentLocation
 import androidx.navigation.NavController
-import com.example.inf2007_project.AuthViewModel
-import com.example.inf2007_project.ClinicViewModel
-import com.example.inf2007_project.NearbySearchViewModel
+import com.example.inf2007_project.uam.AuthViewModel
 import com.example.inf2007_project.TestViewModel
+import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority

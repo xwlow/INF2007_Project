@@ -1,4 +1,4 @@
-package com.example.inf2007_project.pages
+package com.example.inf2007_project.uam
 
 import android.widget.Button
 import android.widget.Toast
@@ -26,8 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.inf2007_project.AuthState
-import com.example.inf2007_project.AuthViewModel
+//import com.example.inf2007_project.uam.AuthState
+//import com.example.inf2007_project.uam.AuthViewModel
 
 @Composable
 fun LoginPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){

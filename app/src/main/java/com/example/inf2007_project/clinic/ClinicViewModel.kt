@@ -1,18 +1,14 @@
-package com.example.inf2007_project
+package com.example.inf2007_project.clinic
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 //import com.example.inf2007_project.model.ApiResponse
 //import com.example.inf2007_project.model.Clinic
-import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 
 class ClinicViewModel : ViewModel() {
     // Store the list of clinics as LiveData or State

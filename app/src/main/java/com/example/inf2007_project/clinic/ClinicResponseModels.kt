@@ -1,4 +1,4 @@
-package com.example.inf2007_project
+package com.example.inf2007_project.clinic
 
 data class ApiResponse(
     val result: Result

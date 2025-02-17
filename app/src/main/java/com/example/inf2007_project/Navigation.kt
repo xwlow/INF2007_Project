@@ -1,27 +1,28 @@
 package com.example.inf2007_project
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.inf2007_project.pages.ClinicsDetail
-import com.example.inf2007_project.pages.ClinicsPage
-import com.example.inf2007_project.pages.ClinicsPageTest
-import com.example.inf2007_project.pages.ConsultationsPage
-import com.example.inf2007_project.pages.ContactTest
-import com.example.inf2007_project.pages.DetailPage
+import com.example.inf2007_project.clinic.ClinicsDetail
+import com.example.inf2007_project.clinic.ClinicsPage
+import com.example.inf2007_project.clinic.ClinicsPageTest
+import com.example.inf2007_project.clinic.NearbySearchViewModel
+import com.example.inf2007_project.consultation.ConsultationsPage
+import com.example.inf2007_project.message.ContactTest
+import com.example.inf2007_project.notes.DetailPage
 import com.example.inf2007_project.pages.HomePage
-import com.example.inf2007_project.pages.LoginPage
-import com.example.inf2007_project.pages.Messaging
-import com.example.inf2007_project.pages.NotesRemindersPage
-import com.example.inf2007_project.pages.ProfilePage
-import com.example.inf2007_project.pages.QueuePage
-import com.example.inf2007_project.pages.SignupPage
+import com.example.inf2007_project.uam.LoginPage
+import com.example.inf2007_project.message.Messaging
+import com.example.inf2007_project.notes.NotesRemindersPage
+import com.example.inf2007_project.uam.ProfilePage
+import com.example.inf2007_project.clinic.QueuePage
+import com.example.inf2007_project.clinic.QueueViewModel
+import com.example.inf2007_project.uam.AuthViewModel
+import com.example.inf2007_project.uam.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
