@@ -1,60 +1,49 @@
 package com.example.inf2007_project.uam
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
-fun SignupPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
+fun SignupPage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var cfmPassword by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var nric by remember { mutableStateOf("") }
+    var userRole by remember { mutableStateOf("") }
+    var mExpanded by remember { mutableStateOf(false) }
 
+    val userRoles = listOf("User", "Caretaker")
+    var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
 
-
-    var email by remember {
-        mutableStateOf("")
-    }
-    var password by remember {
-        mutableStateOf("")
-    }
-    var cfmPassword by remember {
-        mutableStateOf("")
-    }
-    var name by remember {
-        mutableStateOf("")
-    }
-    var nric by remember {
-        mutableStateOf("")
-    }
+    val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     val buttonEnable = email.isNotEmpty() && password.isNotEmpty() && cfmPassword.isNotEmpty() && name.isNotEmpty() && nric.isNotEmpty()
 
-
     val db = FirebaseFirestore.getInstance()
-    //val auth = FirebaseAuth.getInstance()
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
     LaunchedEffect(authState.value) {
-        when(authState.value){
+        when (authState.value) {
             is AuthState.Authenticated -> {
                 navController.navigate("home")
                 Toast.makeText(context, "You have successfully created an account!", Toast.LENGTH_SHORT).show()
@@ -64,66 +53,71 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
         }
     }
 
-
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
+    ) {
         Text(text = "Signup Page", fontSize = 32.sp)
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(value = email, onValueChange = {
-            email = it
-        },
-            label = {
-                Text(text = "Email")
-            })
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text(text = "Email") })
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(text = "Name") }, singleLine = true)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(value = nric, onValueChange = { nric = it }, label = { Text(text = "NRIC") }, singleLine = true)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Box to properly position the dropdown menu
+        Box {
+            OutlinedTextField(
+                value = userRole,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier
+                    //.fillMaxWidth()
+                    .clickable { mExpanded = true }
+                    .onGloballyPositioned { coordinates -> mTextFieldSize = coordinates.size.toSize() },
+                label = { Text("User Type") },
+                trailingIcon = { Icon(icon, "Dropdown", Modifier.clickable { mExpanded = !mExpanded }) }
+            )
+
+            DropdownMenu(
+                expanded = mExpanded,
+                onDismissRequest = { mExpanded = false },
+                modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+            ) {
+                userRoles.forEach { label ->
+                    DropdownMenuItem(
+                        text = { Text(text = label) },
+                        onClick = {
+                            userRole = label
+                            mExpanded = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(value = password, onValueChange = {
-            password = it
-        },
-            label = {
-                Text(text = "Password")
-            },
-            visualTransformation = PasswordVisualTransformation(), // Masks the input
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text(text = "Password") },
+            visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(value = cfmPassword, onValueChange = {
-            cfmPassword = it
-        },
-            label = {
-                Text(text = "Confirm Password")
-            },
-            visualTransformation = PasswordVisualTransformation(), // Masks the input
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(value = name, onValueChange = {
-            name = it
-        },
-            label = {
-                Text(text = "Name")
-            },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(value = nric, onValueChange = {
-            nric = it
-        },
-            label = {
-                Text(text = "NRIC")
-            },
+        OutlinedTextField(
+            value = cfmPassword,
+            onValueChange = { cfmPassword = it },
+            label = { Text(text = "Confirm Password") },
+            visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
 
@@ -131,11 +125,11 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
 
         Button(onClick = {
             val data = mutableMapOf<String, Any>()
-
-//          data["category"] = selectedCategory
             data["name"] = name
             data["nric"] = nric
             data["email"] = email
+            data["userRole"] = userRole
+
             if (password == cfmPassword && password.length >= 6) {
                 authViewModel.signup(email, password)
                 db.collection("userDetail")
@@ -144,23 +138,18 @@ fun SignupPage(modifier: Modifier = Modifier, navController : NavController, aut
                         Toast.makeText(context, "Account Created successfully!", Toast.LENGTH_SHORT).show()
                         navController.navigate("Login")
                     }
-                    .addOnFailureListener{e ->
+                    .addOnFailureListener { e ->
                         Toast.makeText(context, "Error adding account: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
-
-//                Toast.makeText(context, "Account Successfully Created!", Toast.LENGTH_SHORT).show()
-//                navController.navigate("Login")
-            }
-            else if(password != cfmPassword){
+            } else if (password != cfmPassword) {
                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
             }
-            else {
-                Toast.makeText(context, "Please ensure that your password is minimally 6 characters", Toast.LENGTH_SHORT).show()
-            }
-            //navController.navigate("login")
         }, enabled = buttonEnable) {
             Text(text = "Create Account")
         }
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
