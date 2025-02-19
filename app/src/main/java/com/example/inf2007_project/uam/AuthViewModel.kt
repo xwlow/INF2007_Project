@@ -52,10 +52,11 @@ class AuthViewModel : ViewModel(){
             }
     }
 
-    fun signup(email:String, password:String){
+    fun signup(email:String, password:String, onResult: (String?) -> Unit){
 
         if(email.isEmpty() || password.isEmpty()){
             _authState.value = AuthState.Error("Email or Password cannot be empty!")
+            onResult(null)
             return
         }
 
@@ -63,10 +64,13 @@ class AuthViewModel : ViewModel(){
         auth.createUserWithEmailAndPassword(email,password)
             .addOnCompleteListener{task->
                 if(task.isSuccessful){
+                    val uid = auth.currentUser?.uid
                     _authState.value = AuthState.Unauthenticated
+                    onResult(uid)
                 }
                 else{
                     _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
+                    onResult(null)
                 }
             }
 
