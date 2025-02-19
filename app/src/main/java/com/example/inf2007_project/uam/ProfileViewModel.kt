@@ -98,6 +98,23 @@ class ProfileViewModel : ViewModel() {
                     Log.e("ProfileViewModel", "Error updating profile", e)
                 }
         }
+
+        fun deleteProfile() {
+            val user = auth.currentUser
+            val userUID = getUserUID()
+            if (userUID.isEmpty()) return
+
+            val userInfoRef = db.collection("userDetail").document(userUID)
+            userInfoRef?.delete()
+            user?.delete()
+                ?.addOnCompleteListener{ task ->
+                    if (task.isSuccessful) {
+                        Log.d("Firebase", "User account deleted successfully.")
+                    } else {
+                        Log.w("Firebase", "Error deleting user account", task.exception)
+                    }
+                }
+        }
     }
 
 

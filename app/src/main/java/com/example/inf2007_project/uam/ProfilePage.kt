@@ -138,6 +138,18 @@ fun ProfilePage(
                     ) {
                         Text("Update")
                     }
+
+                    //for deleting account button
+                    Button(
+                        onClick = {
+                            profileViewModel.deleteProfile()
+                            Toast.makeText(context, "User deleted!", Toast.LENGTH_SHORT).show()
+
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         }
