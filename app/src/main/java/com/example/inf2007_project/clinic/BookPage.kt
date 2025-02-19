@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.inf2007_project.pages.BottomNavigationBar
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,10 +59,11 @@ fun BookPage(
     clinicID: String,
     modifier: Modifier = Modifier,
     navController: NavController,
+    bookViewModel: BookViewModel
 ) {
     // Calender
     var selectedDate by remember { mutableStateOf("") }
-    // Name
+    // Name (Might not need)
     var name by remember { mutableStateOf("") }
     // Doctors
     var doctorsExpanded by remember { mutableStateOf(false) }
@@ -285,6 +287,20 @@ fun BookPage(
             confirmButton = {
                 androidx.compose.material3.Button(
                     onClick = {
+                        bookViewModel.saveBooking(
+                            selectedDate = selectedDate,
+                            doctorName = doctorName,
+                            chosenTime = chosenTime,
+                            clinicName = clinicName, // Replace with actual clinic name
+                            extraInformation = extraInformation,
+                            onSuccess = {
+                                Log.e("Firestore", "Booking saved")
+                            },
+                            onFailure = { exception ->
+                                Log.e("Firestore", "Failed to save booking", exception)
+                            }
+                        )
+
                         // Confirm Booking Action
                         showDialog = false
                         val encodedClinicInfo = Uri.encode("${clinicName}|${clinicStreetName}|${clinicID}")

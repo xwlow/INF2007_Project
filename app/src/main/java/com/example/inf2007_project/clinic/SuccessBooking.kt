@@ -37,7 +37,7 @@ fun SuccessBooking(
     clinicName: String,
     clinicStreetName: String,
     clinicID: String,
-    selectedDate: String ,
+    selectedDate: String,
     chosenTime: String,
     modifier: Modifier = Modifier,
     navController: NavController,

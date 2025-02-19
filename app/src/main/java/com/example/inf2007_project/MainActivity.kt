@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import com.example.inf2007_project.clinic.BookViewModel
 import com.example.inf2007_project.clinic.NearbySearchViewModel
 import com.example.inf2007_project.clinic.QueueViewModel
 import com.example.inf2007_project.uam.AuthViewModel
@@ -34,10 +35,13 @@ class MainActivity : ComponentActivity() {
         val testViewModel: TestViewModel by viewModels()
         val nearbySearchViewModel: NearbySearchViewModel by viewModels()
         val queueViewModel: QueueViewModel by viewModels()
+        val bookViewModel: BookViewModel by viewModels()
         setContent {
             INF2007_ProjectTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel, testViewModel = testViewModel, nearbySearchViewModel = nearbySearchViewModel, queueViewModel = queueViewModel)
+                    Navigation(modifier = Modifier.padding(innerPadding), authViewModel = authViewModel,
+                        testViewModel = testViewModel, nearbySearchViewModel = nearbySearchViewModel,
+                        queueViewModel = queueViewModel, bookViewModel = bookViewModel)
                 }
             }
         }

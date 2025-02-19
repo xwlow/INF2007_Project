@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.inf2007_project.clinic.BookPage
+import com.example.inf2007_project.clinic.BookViewModel
 import com.example.inf2007_project.clinic.ClinicsDetail
 import com.example.inf2007_project.clinic.ClinicsPage
 import com.example.inf2007_project.clinic.ClinicsPageTest
@@ -28,7 +29,9 @@ import com.example.inf2007_project.uam.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel, queueViewModel: QueueViewModel){
+fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel,
+               nearbySearchViewModel: NearbySearchViewModel, queueViewModel: QueueViewModel,
+               bookViewModel: BookViewModel){
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login", builder =  {
@@ -97,7 +100,8 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
                 clinicStreetName = clinicStreetName,
                 clinicID = clinicID,
                 modifier = Modifier,
-                navController = navController
+                navController = navController,
+                bookViewModel = bookViewModel
             )
         }
 
