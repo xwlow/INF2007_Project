@@ -64,35 +64,37 @@ class ProfileViewModel : ViewModel() {
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     val name = document.getString("name") ?: ""
+                    val email = document.getString("email") ?: ""
                     val phone = document.getString("phone") ?: ""
-                    _userDetails.value = UserDetails(name, phone)
-                    Log.d("ProfileViewModel", "User details fetched: $name, $phone")
+                    _userDetails.value = UserDetails(name, email, phone)
+                    Log.d("ProfileViewModel", "User details fetched: $name, $email,$phone for UID: $userUID")
                 } else {
                     Log.d("ProfileViewModel", "No user data found")
-                    _userDetails.value = UserDetails("", "")
+                    _userDetails.value = UserDetails("", "", "")
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("ProfileViewModel", "Failed to fetch user details", e)
-                _userDetails.value = UserDetails("", "")
+                _userDetails.value = UserDetails("", "", "")
             }
         }
 
-        fun updateProfile(name: String, phone: String) {
+        fun updateProfile(name: String, email: String, phone: String) {
             val userUID = getUserUID()
             if (userUID.isEmpty()) return
 
             val userInfoRef = db.collection("userDetail").document(userUID)
             val updateData = hashMapOf(
-                "userUID" to userUID,
+                //"userUID" to userUID,
                 "name" to name,
+                "email" to email,
                 "phone" to phone
             )
 
             userInfoRef.set(updateData, SetOptions.merge())
                 .addOnSuccessListener {
                     Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
-                    _userDetails.value = UserDetails(name, phone)
+                    _userDetails.value = UserDetails(name, email, phone)
                 }
                 .addOnFailureListener { e ->
                     Log.e("ProfileViewModel", "Error updating profile", e)
@@ -135,4 +137,4 @@ class ProfileViewModel : ViewModel() {
 //    }
 //}
 
-data class UserDetails(val name: String, val phone: String)
+data class UserDetails(val name: String, val email: String, val phone: String)

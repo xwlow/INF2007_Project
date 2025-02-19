@@ -42,7 +42,7 @@ fun ProfilePage(
 
     //for user details
     var name by remember { mutableStateOf(currentUser?.displayName ?: "") }
-    var email by remember { mutableStateOf(currentUser?.email ?: "") }
+    var email by remember { mutableStateOf( "") }
     var phone by remember { mutableStateOf(currentUser?.phoneNumber ?: "") }
 
     LaunchedEffect(authState.value) {
@@ -62,6 +62,7 @@ fun ProfilePage(
     LaunchedEffect(userDetails) {
         userDetails?.let {
             name = it.name
+            email = it.email
             phone =  it.phone
         }
     }
@@ -128,7 +129,7 @@ fun ProfilePage(
                     Button(
                         onClick = {
                             // Save profile changes
-                            profileViewModel.updateProfile(name, phone)
+                            profileViewModel.updateProfile(name, email, phone)
                             //updateFirebaseAuthProfile(name, phone)
                             profileViewModel.saveUserInfo()
                             Toast.makeText(context, "Profile updated!", Toast.LENGTH_SHORT).show()

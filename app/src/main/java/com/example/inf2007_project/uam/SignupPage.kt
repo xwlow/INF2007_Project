@@ -1,5 +1,6 @@
 package com.example.inf2007_project.uam
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -131,16 +132,32 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
             data["userRole"] = userRole
 
             if (password == cfmPassword && password.length >= 6) {
-                authViewModel.signup(email, password)
-                db.collection("userDetail")
-                    .add(data)
-                    .addOnSuccessListener {
-                        Toast.makeText(context, "Account Created successfully!", Toast.LENGTH_SHORT).show()
-                        navController.navigate("Login")
+                // First sign up the user
+                authViewModel.signup(email, password) { uid ->
+                    if (uid != null) {
+                        Log.d("Auth", "Successfully created user with UID: $uid")
+
+                        // After successful authentication, add data to Firestore
+                        // Add the UID to the data with the uid field
+                        data["uid"] = uid
+
+                        // Consider using the UID as the document ID instead of auto-generating one
+                        db.collection("userDetail")
+                            .document(uid)  // Use UID as document ID - best practice --> Primary Key
+                            .set(data)      // Use set instead of add when document ID is specified
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Account Created successfully!", Toast.LENGTH_SHORT).show()
+                                navController.navigate("Login")
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(context, "Error adding account: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        // Signup failed
+                        Log.d("Auth", "Failed to create user")
+                        Toast.makeText(context, "Failed to create user account", Toast.LENGTH_SHORT).show()
                     }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(context, "Error adding account: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                }
             } else if (password != cfmPassword) {
                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
             } else {
