@@ -22,6 +22,7 @@ import com.example.inf2007_project.notes.NotesRemindersPage
 import com.example.inf2007_project.uam.ProfilePage
 import com.example.inf2007_project.clinic.QueuePage
 import com.example.inf2007_project.clinic.QueueViewModel
+import com.example.inf2007_project.clinic.SuccessBooking
 import com.example.inf2007_project.uam.AuthViewModel
 import com.example.inf2007_project.uam.SignupPage
 
@@ -95,6 +96,25 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
                 clinicName = clinicName ?: "Unknown Clinic",
                 clinicStreetName = clinicStreetName,
                 clinicID = clinicID,
+                modifier = Modifier,
+                navController = navController
+            )
+        }
+
+        // Success Consultation Booking
+        composable("SuccessBooking/{clinicInfo}/{bookingInfo}"){ backStackEntry ->
+            val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
+            val bookingInfo = backStackEntry.arguments?.getString("bookingInfo") ?: ""
+            val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
+            val (selectedDate, chosenTime) = bookingInfo.split("|")
+
+
+            SuccessBooking(
+                clinicName = clinicName ?: "Unknown Clinic",
+                clinicStreetName = clinicStreetName,
+                clinicID = clinicID,
+                selectedDate = selectedDate,
+                chosenTime = chosenTime,
                 modifier = Modifier,
                 navController = navController
             )
