@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.inf2007_project.clinic.BookPage
 import com.example.inf2007_project.clinic.ClinicsDetail
 import com.example.inf2007_project.clinic.ClinicsPage
 import com.example.inf2007_project.clinic.ClinicsPageTest
@@ -77,6 +78,20 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
             val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
             ClinicsDetail(
                 viewModel = queueViewModel,
+                clinicName = clinicName ?: "Unknown Clinic",
+                clinicStreetName = clinicStreetName,
+                clinicID = clinicID,
+                modifier = Modifier,
+                navController = navController
+            )
+        }
+
+        // Consultation Booking
+        composable("book/{clinicInfo}"){ backStackEntry ->
+            val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
+            val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
+
+            BookPage(
                 clinicName = clinicName ?: "Unknown Clinic",
                 clinicStreetName = clinicStreetName,
                 clinicID = clinicID,
