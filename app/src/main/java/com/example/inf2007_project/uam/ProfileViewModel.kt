@@ -1,27 +1,121 @@
 package com.example.inf2007_project.uam
 
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 
 class ProfileViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    fun updateProfile(userId: String, name: String, phone: String) {
-        val userRef = db.collection("users").document(userId)
-        val userData = hashMapOf(
-            "name" to name,
-            "phone" to phone
+    private val _userDetails = MutableLiveData<UserDetails?>()
+    val userDetails: LiveData<UserDetails?> = _userDetails
+
+    // to be activated in login screen
+    fun getUserUID(): String {
+        return FirebaseAuth.getInstance().currentUser?.uid ?:""
+    }
+
+    fun saveUserInfo() {
+        val userUID = getUserUID()
+        if (userUID.isEmpty()) return
+
+        val userInfoRef = db.collection("userDetail").document(userUID)
+        val userInfoData = hashMapOf(
+            "userUID" to userUID,
+            "name" to "",
+            "phone" to ""
         )
+    }
 
-        userRef.set(userData, SetOptions.merge())
-            .addOnSuccessListener {
-                Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
+    fun fetchUserDetails() {
+//        val email = auth.currentUser?.email ?: return
+//        Log.d("Firestore Debug", "Fetched Email: $email")
+//
+//        db.collection("userDetail").document(email).get()
+//            .addOnSuccessListener { document ->
+//                if (document.exists()) {
+//                    val name = document.getString("name") ?: ""
+//                    val phone = document.getString("phone") ?: ""
+//                    _userDetails.value = UserDetails(name, phone)
+//                    Log.d("ProfileViewModel", "User details fetched: $name, $phone")
+//                } else {
+//                    Log.d("ProfileViewModel", "No user data found")
+//                    _userDetails.value = UserDetails("", "")
+//                }
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("ProfileViewModel", "Failed to fetch user details", e)
+//                _userDetails.value = UserDetails("", "")
+//            }
+        val userUID = getUserUID()
+        if (userUID.isEmpty()) return
+
+        val userInfoRef = db.collection("userDetail").document(userUID)
+
+        //fetch user data from firestore
+        userInfoRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val name = document.getString("name") ?: ""
+                    val phone = document.getString("phone") ?: ""
+                    _userDetails.value = UserDetails(name, phone)
+                    Log.d("ProfileViewModel", "User details fetched: $name, $phone")
+                } else {
+                    Log.d("ProfileViewModel", "No user data found")
+                    _userDetails.value = UserDetails("", "")
+                }
             }
             .addOnFailureListener { e ->
-                Log.e("ProfileViewModel", "Error updating profile", e)
+                Log.e("ProfileViewModel", "Failed to fetch user details", e)
+                _userDetails.value = UserDetails("", "")
             }
+        }
+
+        fun updateProfile(name: String, phone: String) {
+            val userUID = getUserUID()
+            if (userUID.isEmpty()) return
+
+            val userInfoRef = db.collection("userDetail").document(userUID)
+            val updateData = hashMapOf(
+                "userUID" to userUID,
+                "name" to name,
+                "phone" to phone
+            )
+
+            userInfoRef.set(updateData, SetOptions.merge())
+                .addOnSuccessListener {
+                    Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
+                    _userDetails.value = UserDetails(name, phone)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("ProfileViewModel", "Error updating profile", e)
+                }
+        }
     }
-}
+
+
+//fun updateFirebaseAuthProfile(name: String, phone: String) {
+//    val currentUser = FirebaseAuth.getInstance().currentUser
+//
+//    //for update profile
+//    currentUser?.updateProfile(
+//        UserProfileChangeRequest.Builder()
+//            .setDisplayName(name)
+//            .build()
+//    )?.addOnCompleteListener { task ->
+//        if (task.isSuccessful) {
+//            Log.d("Profile Update", "User profile updated successfully")
+//        } else {
+//            Log.e("Profile Update", "Failed to update user profile", task.exception)
+//        }
+//    }
+//}
+
+data class UserDetails(val name: String, val phone: String)

@@ -37,6 +37,9 @@ fun ProfilePage(
     val currentUser = FirebaseAuth.getInstance().currentUser
     val context = LocalContext.current
 
+    //for observing firestore user details
+    val userDetails by profileViewModel.userDetails.observeAsState()
+
     //for user details
     var name by remember { mutableStateOf(currentUser?.displayName ?: "") }
     var email by remember { mutableStateOf(currentUser?.email ?: "") }
@@ -49,6 +52,17 @@ fun ProfilePage(
                 Toast.makeText(context, "Profile Page", Toast.LENGTH_SHORT).show()
             }
             else -> Unit
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        profileViewModel.fetchUserDetails()
+    }
+
+    LaunchedEffect(userDetails) {
+        userDetails?.let {
+            name = it.name
+            phone =  it.phone
         }
     }
 
@@ -97,7 +111,7 @@ fun ProfilePage(
                         value = email,
                         onValueChange = {email = it },
                         label = { Text("Email") },
-                        //readOnly = !isEditing,
+                        readOnly = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -114,11 +128,11 @@ fun ProfilePage(
                     Button(
                         onClick = {
                             // Save profile changes
-                            currentUser?.uid?.let { userId ->
-                                profileViewModel.updateProfile(userId, name, phone)
-                                updateFirebaseAuthProfile(name, email)
-                                Toast.makeText(context, "Profile updated!", Toast.LENGTH_SHORT).show()
-                            }
+                            profileViewModel.updateProfile(name, phone)
+                            //updateFirebaseAuthProfile(name, phone)
+                            profileViewModel.saveUserInfo()
+                            Toast.makeText(context, "Profile updated!", Toast.LENGTH_SHORT).show()
+
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -130,30 +144,5 @@ fun ProfilePage(
     }
 }
 
-fun updateFirebaseAuthProfile(name: String, email: String) {
-    val currentUser = FirebaseAuth.getInstance().currentUser
 
-    //for update profile
-    currentUser?.updateProfile(
-        UserProfileChangeRequest.Builder()
-            .setDisplayName(name)
-            .build()
-    )?.addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-            Log.d("Profile Update", "User profile updated successfully")
-        } else {
-            Log.e("Profile Update", "Failed to update user profile", task.exception)
-        }
-    }
 
-    //for update email
-    email?.let {
-        currentUser?.updateEmail(it)?.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                Log.d("Profile Update", "Email updated successfully")
-            } else {
-                Log.e("Profile Update", "Failed to update email", task.exception)
-            }
-        }
-    }
-}
