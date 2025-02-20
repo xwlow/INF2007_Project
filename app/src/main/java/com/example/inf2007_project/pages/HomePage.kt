@@ -115,6 +115,12 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
             }) {
                 Text(text = "Clinics Test with test API Sample")
             }
+
+            TextButton(onClick = {
+                navController.navigate("chatbot")
+            }) {
+                Text(text = "Chatbot Page Test")
+            }
         }
     }
 }

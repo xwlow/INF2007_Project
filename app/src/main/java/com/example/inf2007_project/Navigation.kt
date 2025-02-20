@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.inf2007_project.chatbot.ChatBotScreen
 import com.example.inf2007_project.clinic.ClinicsDetail
 import com.example.inf2007_project.clinic.ClinicsPage
 import com.example.inf2007_project.clinic.ClinicsPageTest
@@ -96,6 +97,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
 
         composable("profile") {
             ProfilePage(modifier, navController, authViewModel)
+        }
+
+        composable("chatbot"){
+            ChatBotScreen(modifier, navController)
         }
 
     } )
