@@ -24,6 +24,7 @@ import com.example.inf2007_project.uam.ProfilePage
 import com.example.inf2007_project.clinic.QueuePage
 import com.example.inf2007_project.clinic.QueueViewModel
 import com.example.inf2007_project.clinic.SuccessBooking
+import com.example.inf2007_project.consultation.ConsultationsPage2
 import com.example.inf2007_project.uam.AuthViewModel
 import com.example.inf2007_project.uam.SignupPage
 
@@ -131,6 +132,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
 
         composable("consultations"){
             ConsultationsPage(modifier, navController, authViewModel, testViewModel)
+        }
+
+        composable("consultations2"){
+            ConsultationsPage2(modifier, navController, authViewModel, testViewModel)
         }
 
         composable("profile") {

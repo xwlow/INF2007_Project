@@ -45,22 +45,10 @@ class BookViewModel : ViewModel() {
                     extraInformation = extraInformation
                 )
 
-//                FirebaseFirestore.getInstance().collection("consultations")
-//                    .document(user.uid) // Use userID as the document ID (Primary Key)
-//                    .set(booking)
-//                    .await() // Use suspend function to wait for Firestore response
-
-//                FirebaseFirestore.getInstance()
-//                    .collection("bookings") // Top-level collection
+                FirebaseFirestore.getInstance()
+                    .collection("consultations") // Top-level collection
 //                    .document(user.uid) // Each user has a document
 //                    .collection("consultations")
-//                    .add(booking) // Firestore generates unique ID
-//                    .await()
-
-                FirebaseFirestore.getInstance()
-                    .collection("bookings") // Top-level collection
-                    .document(user.uid) // Each user has a document
-                    .collection("consultations")
                     .add(booking) // Firestore generates unique ID
                     .await()
 
