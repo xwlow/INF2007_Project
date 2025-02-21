@@ -1,13 +1,21 @@
 package com.example.inf2007_project.clinic
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class Booking(
+    val consultationId: String = "",
     val userId: String = "",
     val selectedDate: String = "",
     val doctorName: String = "",
@@ -17,6 +25,77 @@ data class Booking(
 )
 
 class BookViewModel : ViewModel() {
+
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+
+    // StateFlow to store past and upcoming consultations
+    private val _pastConsultations = MutableStateFlow<List<Booking>>(emptyList())
+    val pastConsultations: StateFlow<List<Booking>> = _pastConsultations
+
+    private val _upcomingConsultations = MutableStateFlow<List<Booking>>(emptyList())
+    val upcomingConsultations: StateFlow<List<Booking>> = _upcomingConsultations
+
+    init {
+        fetchConsultations() // Fetch consultations when ViewModel initializes
+    }
+
+    // Function to fetch consultations
+    private fun fetchConsultations() {
+        val user = auth.currentUser
+        if (user == null) {
+            Log.e("FirestoreError", "User not logged in")
+            return
+        }
+
+        db.collection("consultations")
+            .whereEqualTo("userId", user.uid)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("FirestoreError", "Query failed: ${e.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot == null || snapshot.isEmpty) {
+                    Log.w("FirestoreWarning", "No matching consultations found.")
+                    _pastConsultations.value = emptyList()
+                    _upcomingConsultations.value = emptyList()
+                    return@addSnapshotListener
+                }
+
+                val now = Calendar.getInstance().time
+
+                val allConsultations = snapshot.documents.mapNotNull { doc ->
+                    Booking(
+                        consultationId = doc.id,
+                        userId = doc.getString("userId") ?: "",
+                        selectedDate = doc.getString("selectedDate") ?: "",
+                        doctorName = doc.getString("doctorName") ?: "",
+                        chosenTime = doc.getString("chosenTime") ?: "",
+                        clinicName = doc.getString("clinicName") ?: "",
+                        extraInformation = doc.getString("extraInformation") ?: ""
+                    )
+                }
+
+                val pastList = mutableListOf<Booking>()
+                val upcomingList = mutableListOf<Booking>()
+
+                allConsultations.forEach { consultation ->
+                    val consultationDateTime = convertToDateTime(consultation.selectedDate, consultation.chosenTime)
+                    if (consultationDateTime != null) {
+                        if (consultationDateTime.before(now)) {
+                            pastList.add(consultation)
+                        } else {
+                            upcomingList.add(consultation)
+                        }
+                    }
+                }
+
+                // Update StateFlow values
+                _pastConsultations.value = pastList
+                _upcomingConsultations.value = upcomingList
+            }
+    }
 
     // Function to save booking
     fun saveBooking(
@@ -30,25 +109,33 @@ class BookViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val user = FirebaseAuth.getInstance().currentUser
+                val user = auth.currentUser
                 if (user == null) {
                     onFailure(Exception("User not logged in"))
                     return@launch
                 }
 
-                val booking = Booking(
-                    userId = user.uid,
-                    selectedDate = selectedDate,
-                    doctorName = doctorName,
-                    chosenTime = chosenTime,
-                    clinicName = clinicName,
-                    extraInformation = extraInformation
+//                val booking = Booking(
+//                    userId = user.uid,
+//                    selectedDate = selectedDate,
+//                    doctorName = doctorName,
+//                    chosenTime = chosenTime,
+//                    clinicName = clinicName,
+//                    extraInformation = extraInformation
+//                )
+
+                // Create a Booking object WITHOUT consultationId
+                val booking = hashMapOf(
+                    "userId" to user.uid,
+                    "selectedDate" to selectedDate,
+                    "doctorName" to doctorName,
+                    "chosenTime" to chosenTime,
+                    "clinicName" to clinicName,
+                    "extraInformation" to extraInformation
                 )
 
                 FirebaseFirestore.getInstance()
                     .collection("consultations") // Top-level collection
-//                    .document(user.uid) // Each user has a document
-//                    .collection("consultations")
                     .add(booking) // Firestore generates unique ID
                     .await()
 
@@ -56,6 +143,36 @@ class BookViewModel : ViewModel() {
             } catch (e: Exception) {
                 onFailure(e)
             }
+        }
+    }
+
+    // Function to delete booking
+    fun deleteBooking(consultationId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        viewModelScope.launch {
+            try {
+                db.collection("consultations")
+                    .document(consultationId) // Deletes the document by its ID
+                    .delete()
+                    .await()
+
+                onSuccess() // Call success callback
+                Log.d("Firestore", "Successfully deleted consultation: $consultationId")
+            } catch (e: Exception) {
+                onFailure(e) // Call failure callback
+                Log.e("Firestore", "Error deleting consultation", e)
+            }
+        }
+    }
+
+    // Function to convert date and time strings to a Date object
+    private fun convertToDateTime(date: String, time: String): Date? {
+        return try {
+            val dateTimeString = "$date $time"
+            val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.getDefault())
+            formatter.parse(dateTimeString)
+        } catch (e: Exception) {
+            Log.e("DateConversion", "Error parsing date: $date $time", e)
+            null
         }
     }
 }

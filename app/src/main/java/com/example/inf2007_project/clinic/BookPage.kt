@@ -291,7 +291,7 @@ fun BookPage(
                             selectedDate = selectedDate,
                             doctorName = doctorName,
                             chosenTime = chosenTime,
-                            clinicName = clinicName, // Replace with actual clinic name
+                            clinicName = clinicName,
                             extraInformation = extraInformation,
                             onSuccess = {
                                 Log.e("Firestore", "Booking saved")

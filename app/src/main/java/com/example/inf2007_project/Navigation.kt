@@ -136,7 +136,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         composable("consultations2"){
-            ConsultationsPage2(modifier, navController, authViewModel, testViewModel)
+            ConsultationsPage2(modifier, navController, bookViewModel)
         }
 
         composable("profile") {
