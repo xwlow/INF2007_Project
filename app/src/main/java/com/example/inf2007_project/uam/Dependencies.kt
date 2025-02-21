@@ -1,23 +1,47 @@
 package com.example.inf2007_project.uam
 
 import android.util.Patterns
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DependenciesPage(navController: NavController) {
-    var dependencies by remember { mutableStateOf(mutableListOf<DependencyData>()) }
-    var newDependency by remember { mutableStateOf<DependencyData?>(null) }
-    var isEditingDependency by remember { mutableStateOf(false) }
+    val firestore = FirebaseFirestore.getInstance()
+    val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
+    var dependencies by remember { mutableStateOf(emptyList<DependencyData>()) }
+    var selectedDependency by remember { mutableStateOf<DependencyData?>(null) }
+    var isAddingNew by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            try {
+                val result = firestore.collection("dependencies")
+                    .whereEqualTo("user_id", userId)
+                    .get().await()
+                dependencies = result.documents.mapNotNull { doc ->
+                    doc.toObject(DependencyData::class.java)?.copy(id = doc.id)
+                }
+            } catch (e: Exception) {
+                // if failed to get info
+                println("Error fetching dependencies: ${e.message}")
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -41,248 +65,210 @@ fun DependenciesPage(navController: NavController) {
             verticalArrangement = Arrangement.Top
         ) {
             dependencies.forEachIndexed { index, dependency ->
-                DependencyForm(
+                DependencyDisplay(
                     dependency = dependency,
+                    // auto increament for dep
                     dependencyNumber = index + 1,
-                    isEditableInitially = false,
-                    isNewDependency = false,
-                    onSave = { updatedDependency ->
-                        dependencies = dependencies.toMutableList().apply { this[index] = updatedDependency }
-                        isEditingDependency = false
-                    },
-                    onDelete = {
-                        dependencies = dependencies.toMutableList().apply { removeAt(index) }
-                        isEditingDependency = false
-                    }
+                    onEdit = { selectedDependency = dependency }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // dep form
-            newDependency?.let {
-                DependencyForm(
-                    dependency = it,
-                    dependencyNumber = dependencies.size + 1,
-                    isEditableInitially = true,
-                    isNewDependency = true,
-                    onSave = { savedDependency ->
-                        dependencies = dependencies.toMutableList().apply { add(savedDependency) }
-                        newDependency = null
-                    },
-                    onCancel = { newDependency = null }
-                )
+            // add dep btn
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { isAddingNew = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Add Dependency")
             }
+        }
 
-            // add dep
-            if (!isEditingDependency && newDependency == null) {
-                Button(
-                    onClick = { newDependency = DependencyData() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Add ${dependencies.size + 1}${getOrdinalSuffix(dependencies.size + 1)} Dependency")
+        // selected dep info & features
+        if (selectedDependency != null) {
+            DependencyEditDialog(
+                dependency = selectedDependency!!,
+                onDismiss = { selectedDependency = null },
+                onSave = { updatedDependency ->
+                    updateDependencyInFirestore(updatedDependency, firestore)
+                    dependencies = dependencies.map { if (it.id == updatedDependency.id) updatedDependency else it }
+                    selectedDependency = null
+                },
+                onDelete = {
+                    deleteDependencyFromFirestore(selectedDependency!!.id!!, firestore)
+                    dependencies = dependencies.filterNot { it.id == selectedDependency!!.id }
+                    selectedDependency = null
                 }
-            }
+            )
+        }
+
+        if (isAddingNew) {
+            DependencyEditDialog(
+                dependency = DependencyData(),
+                onDismiss = { isAddingNew = false },
+                onSave = { newDependency ->
+                    addDependencyToFirestore(newDependency, firestore, userId!!)
+                    dependencies = dependencies + newDependency
+                    isAddingNew = false
+                }
+            )
         }
     }
 }
 
-data class DependencyData(
-    var name: String = "",
-    var nric: String = "",
-    var relationship: String = "",
-    var phone: String = "",
-    var email: String = ""
-)
-
-// single dep form
+// display dep information
 @Composable
-fun DependencyForm(
+fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { onEdit() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Dependency $dependencyNumber", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Name: ${dependency.name}")
+            Text("NRIC: ${dependency.nric}")
+            Text("Relationship: ${dependency.relationship}")
+            Text("Phone: ${dependency.phone}")
+            Text("Email: ${dependency.email}")
+        }
+    }
+}
+
+// edit dep info
+@Composable
+fun DependencyEditDialog(
     dependency: DependencyData,
-    dependencyNumber: Int,
-    isEditableInitially: Boolean = true,
-    isNewDependency: Boolean,
+    onDismiss: () -> Unit,
     onSave: (DependencyData) -> Unit,
-    onDelete: (() -> Unit)? = null,
-    onCancel: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null
 ) {
-    // normal form
-    var isEditing by remember { mutableStateOf(isEditableInitially) }
     var name by remember { mutableStateOf(dependency.name) }
     var nric by remember { mutableStateOf(dependency.nric) }
     var relationship by remember { mutableStateOf(dependency.relationship) }
     var phone by remember { mutableStateOf(dependency.phone) }
     var email by remember { mutableStateOf(dependency.email) }
 
-    // error handling
+    // error handling. checking for valid inputs
     var nameError by remember { mutableStateOf(false) }
     var nricError by remember { mutableStateOf(false) }
     var relationshipError by remember { mutableStateOf(false) }
     var phoneError by remember { mutableStateOf(false) }
     var emailError by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Dependency $dependencyNumber", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(4.dp))
+    fun validateInputs(): Boolean {
+        nameError = name.isBlank()
+        nricError = nric.isBlank()
+        relationshipError = relationship.isBlank()
+        // ONLY 8 digits
+        phoneError = phone.length != 8
+        // ONLY accepts email format
+        emailError = !Patterns.EMAIL_ADDRESS.matcher(email).matches()
 
-        // name field
-        if (isEditing) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
-                isError = nameError,
-                modifier = Modifier.fillMaxWidth()
-            )
+        return !(nameError || nricError || relationshipError || phoneError || emailError)
+    }
 
-            //name error
-            if (nameError) Text("Name is required.", color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // nric field
-            OutlinedTextField(
-                value = nric,
-                onValueChange = { nric = it },
-                label = { Text("NRIC") },
-                isError = nricError,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // nric error
-            if (nricError) Text("NRIC is required.", color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // relationship
-            OutlinedTextField(
-                value = relationship,
-                onValueChange = { relationship = it },
-                label = { Text("Relationship") },
-                isError = relationshipError,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // relationship error
-            if (relationshipError) Text("Relationship is required.", color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // phoneNumber
-            OutlinedTextField(
-                value = phone,
-                onValueChange = {
-                    if (it.all { char -> char.isDigit() }) {
-                        phone = it
-                        phoneError = it.length != 8
-                    } else {
-                        phoneError = true
-                    }
-                },
-                label = { Text("Phone Number") },
-                isError = phoneError,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // phoneNumber error
-            if (phoneError) Text("Phone number must be exactly 8 digits.", color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // email
-            OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    emailError = !Patterns.EMAIL_ADDRESS.matcher(email).matches()
-                },
-                label = { Text("Email") },
-                isError = emailError,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // email error
-            if (emailError) Text("Invalid email format.", color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // save & cancel buttons for EDIT mode
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = {
-                        nameError = name.isBlank()
-                        nricError = nric.isBlank()
-                        relationshipError = relationship.isBlank()
-                        phoneError = phone.length != 8
-                        emailError = !Patterns.EMAIL_ADDRESS.matcher(email).matches()
-
-                        if (!nameError && !nricError && !relationshipError && !phoneError && !emailError) {
-                            onSave(DependencyData(name, nric, relationship, phone, email))
-                            isEditing = false
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = !phoneError && !emailError
-                ) {
-                    Text("Save")
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        confirmButton = {
+            // save button for EDIT
+            Button(onClick = {
+                if (validateInputs()) {
+                    onSave(dependency.copy(name = name, nric = nric, relationship = relationship, phone = phone, email = email))
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Button(
-                    onClick = { onCancel?.invoke() },
-                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error),
-                    modifier = Modifier.weight(1f)
-                ) {
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Row {
+                // cancel button for EDIT
+                Button(onClick = { onDismiss() }) {
                     Text("Cancel")
                 }
+                onDelete?.let {
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // delete button to remove dep
+                    Button(
+                        onClick = { onDelete() },
+                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete")
+                    }
+                }
             }
-        } else {
-            Text("Name: $name", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text("NRIC: $nric", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text("Relationship: $relationship", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text("Phone: $phone", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text("Email: $email", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // edit & delete button for DISPLAY mode
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = { isEditing = true },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Edit")
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Button(
-                    onClick = { onDelete?.invoke() },
-                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Delete")
-                }
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    isError = nameError,
+                    supportingText = { if (nameError) Text("Please enter a name") }
+                )
+                OutlinedTextField(
+                    value = nric,
+                    onValueChange = { nric = it },
+                    label = { Text("NRIC") },
+                    isError = nricError,
+                    supportingText = { if (nricError) Text("Please enter NRIC") }
+                )
+                OutlinedTextField(
+                    value = relationship,
+                    onValueChange = { relationship = it },
+                    label = { Text("Relationship") },
+                    isError = relationshipError,
+                    supportingText = { if (relationshipError) Text("Please enter relationship") }
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) phone = it },
+                    label = { Text("Phone") },
+                    //ensures that only accept NUMBER
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    isError = phoneError,
+                    supportingText = { if (phoneError) Text("Phone must be 8 digits") }
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    isError = emailError,
+                    supportingText = { if (emailError) Text("Please enter a valid email") }
+                )
             }
         }
+    )
+}
+
+// Below are the firebase code
+
+// firebase update
+fun updateDependencyInFirestore(dependency: DependencyData, firestore: FirebaseFirestore) {
+    dependency.id?.let {
+        firestore.collection("dependencies").document(it).set(dependency)
     }
 }
 
-// dynamic ordinal suffix
-fun getOrdinalSuffix(number: Int): String {
-    return when {
-        number in 11..13 -> "th"
-        number % 10 == 1 -> "st"
-        number % 10 == 2 -> "nd"
-        number % 10 == 3 -> "rd"
-        else -> "th"
-    }
+// firebase delete dep
+fun deleteDependencyFromFirestore(id: String, firestore: FirebaseFirestore) {
+    firestore.collection("dependencies").document(id).delete()
 }
+
+// firebase add dep
+fun addDependencyToFirestore(dependency: DependencyData, firestore: FirebaseFirestore, userId: String) {
+    firestore.collection("dependencies").add(dependency.copy(user_id = userId))
+}
+
+// info in the form
+data class DependencyData(
+    var id: String? = null,
+    var user_id: String? = null,
+    var name: String = "",
+    var nric: String = "",
+    var relationship: String = "",
+    var phone: String = "",
+    var email: String = ""
+)
