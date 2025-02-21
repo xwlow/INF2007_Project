@@ -178,7 +178,13 @@ fun ClinicsDetail(
                     Text("Get Queue Number")
                 }
                 Button(
-                    onClick = { /* Handle book appointment */ },
+                    onClick = {
+                        /* Handle book appointment */
+                        val currentUser = FirebaseAuth.getInstance().currentUser?.uid
+                        if (currentUser != null) {
+                            navController.navigate("book/$clinicName")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Book an appointment")

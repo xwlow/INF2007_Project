@@ -36,7 +36,7 @@ import com.google.android.gms.location.Priority
 @Composable
 fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel) {
     val keyword = "clinic"
-    val radius = 500
+    val radius = 500 //change for the time being cus yew tee coffeebean got no nearby clinic
     val apiKey = "AIzaSyDZ7GHGvGgfAcldVbm8-zrM4Fghsds89CA"
     val context = LocalContext.current
     val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
