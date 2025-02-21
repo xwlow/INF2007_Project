@@ -67,8 +67,6 @@ fun BookPage(
     val isUpdating = existingBooking != null
     // Calender
     var selectedDate by remember { mutableStateOf("") }
-    // Name (Might not need)
-    var name by remember { mutableStateOf("") }
     // Doctors
     var doctorsExpanded by remember { mutableStateOf(false) }
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -86,11 +84,6 @@ fun BookPage(
     var chosenTime by remember { mutableStateOf("") }
     var timeExpanded by remember { mutableStateOf(false) }
     val timeIcon = if (timeExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-//    val consultationSlots = generateConsultationSlots(
-//        startHour = 8, // Clinic opens at 8 AM
-//        endHour = 17,  // Clinic closes at 5 PM
-//        intervalMinutes = 15 // Each consultation lasts 15 minutes
-//    )
     //val consultationSlots = bookViewModel.availableSlots
     val availableSlots by bookViewModel.availableSlots.collectAsState(initial = emptyList())
     // Extra
@@ -178,19 +171,6 @@ fun BookPage(
                         }
                     }
                 }
-
-                // Name
-                OutlinedTextField(
-                    value = name, onValueChange = {
-                        name = it
-                    },
-                    label = {
-                        Text(text = "Enter Your Name")
-                    },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
 
                 // Dropdown for Doctors
                 Box {
@@ -290,7 +270,7 @@ fun BookPage(
                     onClick = {
                         showDialog = true
                     },
-                    enabled = if (name.isNotEmpty() and doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty()) true else false
+                    enabled = if (doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty()) true else false
                 ) {
                     Text(text = if (isUpdating) "Update Booking" else "Book")
                 }
