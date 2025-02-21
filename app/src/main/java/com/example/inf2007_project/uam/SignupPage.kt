@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.type.Date
 import java.util.Calendar
+import java.util.*
+
 
 @Composable
 fun SignupPage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel) {
@@ -62,6 +65,9 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
         DatePickerDialog(context, { _, selectedYear: Int, selectedMonth: Int, selectedDay: Int ->
             DoB = "$selectedDay/${selectedMonth + 1}/$selectedYear" // Format Date
         }, year, month, day).show()
+
+
+        //Log.d("Age", age.toString())
     }
 
     Column(
