@@ -38,9 +38,25 @@ class BookViewModel : ViewModel() {
     private val _availableSlots = MutableStateFlow<List<String>>(emptyList()) // Store available slots
     val availableSlots: StateFlow<List<String>> = _availableSlots
 
+//    init {
+//        fetchConsultations() // Fetch consultations when ViewModel initializes
+//    }
+
     init {
-        fetchConsultations() // Fetch consultations when ViewModel initializes
+        // Observe FirebaseAuth user changes
+        auth.addAuthStateListener { firebaseAuth ->
+            val currentUser = firebaseAuth.currentUser
+            if (currentUser != null) {
+                Log.d("AuthListener", "User switched: ${currentUser.uid}")
+                fetchConsultations() // ✅ Fetch consultations for the new user
+            } else {
+                Log.w("AuthListener", "User logged out, clearing data")
+                _pastConsultations.value = emptyList()
+                _upcomingConsultations.value = emptyList()
+            }
+        }
     }
+
 
     // Function to fetch consultations
     private fun fetchConsultations() {
