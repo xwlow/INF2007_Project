@@ -23,6 +23,7 @@ import com.example.inf2007_project.uam.ProfilePage
 import com.example.inf2007_project.clinic.QueuePage
 import com.example.inf2007_project.clinic.QueueViewModel
 import com.example.inf2007_project.uam.AuthViewModel
+import com.example.inf2007_project.uam.DependenciesPage
 import com.example.inf2007_project.uam.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -97,6 +98,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
 
         composable("profile") {
             ProfilePage(modifier, navController, authViewModel)
+        }
+
+        composable("dependencies"){
+            DependenciesPage(navController = navController)
         }
 
         composable("chatbot"){
