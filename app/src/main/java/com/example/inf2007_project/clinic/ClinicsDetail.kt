@@ -183,7 +183,7 @@ fun ClinicsDetail(
                         val currentUser = FirebaseAuth.getInstance().currentUser?.uid
                         if (currentUser != null) {
 //                            viewModel.addQueue(clinicID, currentUser)
-                            val encodedClinicInfo = Uri.encode("${clinicName}|${clinicStreetName}|${clinicID}")
+                            val encodedClinicInfo = Uri.encode("${clinicName}|${clinicStreetName}")
                             navController.navigate("book/$encodedClinicInfo")
                         }
                     },

@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,11 +57,13 @@ import java.util.Locale
 fun BookPage(
     clinicName: String,
     clinicStreetName: String,
-    clinicID: String,
     modifier: Modifier = Modifier,
     navController: NavController,
-    bookViewModel: BookViewModel
+    bookViewModel: BookViewModel,
+    existingBooking: Booking? = null
 ) {
+    // Updates
+    val isUpdating = existingBooking != null
     // Calender
     var selectedDate by remember { mutableStateOf("") }
     // Name (Might not need)
@@ -91,6 +94,16 @@ fun BookPage(
     var extraInformation by remember { mutableStateOf("") }
     // Modal
     var showDialog by remember { mutableStateOf(false) }
+
+    // Ensure state updates when existingBooking changes
+    LaunchedEffect(existingBooking) {
+        existingBooking?.let {
+            selectedDate = it.selectedDate
+            doctorName = it.doctorName
+            chosenTime = it.chosenTime
+            extraInformation = it.extraInformation
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -266,60 +279,55 @@ fun BookPage(
                     },
                     enabled = if (name.isNotEmpty() and doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty()) true else false
                 ) {
-                    Text(text = "Book")
+                    Text(text = if (isUpdating) "Update Booking" else "Book")
                 }
             }
         }
     }
-
-    // Popup Modal with AlertDialog
+    // Show Confirmation Dialog
     if (showDialog) {
         androidx.compose.material3.AlertDialog(
-            onDismissRequest = {
-                showDialog = false
-            },
-            title = {
-                Text(text = "Confirm Booking?")
-            },
-            text = {
-                Text(text = "Your appointment will be at $clinicStreetName, $selectedDate @ $chosenTime for $doctorName")
-            },
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirm ${if (isUpdating) "Update" else "Booking"}") },
+            text = { Text("Are you sure you want to ${if (isUpdating) "update" else "book"} this consultation?") },
             confirmButton = {
-                androidx.compose.material3.Button(
+                Button(
                     onClick = {
-                        bookViewModel.saveBooking(
-                            selectedDate = selectedDate,
-                            doctorName = doctorName,
-                            chosenTime = chosenTime,
-                            clinicName = clinicName,
-                            extraInformation = extraInformation,
-                            onSuccess = {
-                                Log.e("Firestore", "Booking saved")
-                            },
-                            onFailure = { exception ->
-                                Log.e("Firestore", "Failed to save booking", exception)
-                            }
-                        )
-
-                        // Confirm Booking Action
                         showDialog = false
-                        val encodedClinicInfo = Uri.encode("${clinicName}|${clinicStreetName}|${clinicID}")
                         val encodedBookingInfo = Uri.encode("${selectedDate}|${chosenTime}")
-                        navController.navigate("SuccessBooking/$encodedClinicInfo/$encodedBookingInfo")
+                        navController.navigate("SuccessBooking/$encodedBookingInfo")
+                        if (isUpdating) {
+                            bookViewModel.updateBooking(
+                                bookingId = existingBooking!!.consultationId,
+                                selectedDate = selectedDate,
+                                doctorName = doctorName,
+                                chosenTime = chosenTime,
+                                clinicName = clinicName,
+                                extraInformation = extraInformation
+                            )
+                        } else {
+                            bookViewModel.saveBooking(
+                                selectedDate = selectedDate,
+                                doctorName = doctorName,
+                                chosenTime = chosenTime,
+                                clinicName = clinicName,
+                                extraInformation = extraInformation,
+                                clinicStreetName = clinicStreetName,
+                                onSuccess = {
+                                    Log.e("Firestore", "Booking saved")
+                                },
+                                onFailure = { exception ->
+                                    Log.e("Firestore", "Failed to save booking", exception)
+                                }
+                            )
+                        }
                     }
                 ) {
                     Text("Confirm")
                 }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        // Close the dialog
-                        showDialog = false
-                    }
-                ) {
-                    Text("Cancel")
-                }
+                Button(onClick = { showDialog = false }) { Text("Cancel") }
             }
         )
     }

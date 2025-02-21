@@ -3,13 +3,21 @@ package com.example.inf2007_project
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.inf2007_project.clinic.BookPage
 import com.example.inf2007_project.clinic.BookViewModel
 import com.example.inf2007_project.chatbot.ChatBotScreen
+import com.example.inf2007_project.clinic.Booking
 import com.example.inf2007_project.clinic.ClinicsDetail
 import com.example.inf2007_project.clinic.ClinicsPage
 import com.example.inf2007_project.clinic.ClinicsPageTest
@@ -82,6 +90,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("clinic/{clinicInfo}") { backStackEntry ->
             val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
             val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
+
             ClinicsDetail(
                 viewModel = queueViewModel,
                 clinicName = clinicName ?: "Unknown Clinic",
@@ -93,32 +102,39 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         // Consultation Booking
-        composable("book/{clinicInfo}"){ backStackEntry ->
+        composable("book/{clinicInfo}?consultationId={consultationId}") { backStackEntry ->
             val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
-            val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
+            val consultationId = backStackEntry.arguments?.getString("consultationId")
+
+            //val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
+            val (clinicName, clinicStreetName) = clinicInfo.split("|")
+            var existingBooking by remember { mutableStateOf<Booking?>(null) }
+
+            // Fetch existing consultation if consultationId is provided
+            LaunchedEffect(consultationId) {
+                if (consultationId != null) {
+                    bookViewModel.getConsultation(consultationId) { booking ->
+                        existingBooking = booking // Store the retrieved booking
+                    }
+                }
+            }
 
             BookPage(
                 clinicName = clinicName ?: "Unknown Clinic",
                 clinicStreetName = clinicStreetName,
-                clinicID = clinicID,
                 modifier = Modifier,
                 navController = navController,
-                bookViewModel = bookViewModel
+                bookViewModel = bookViewModel,
+                existingBooking = existingBooking
             )
         }
 
         // Success Consultation Booking
-        composable("SuccessBooking/{clinicInfo}/{bookingInfo}"){ backStackEntry ->
-            val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
+        composable("SuccessBooking/{bookingInfo}"){ backStackEntry ->
             val bookingInfo = backStackEntry.arguments?.getString("bookingInfo") ?: ""
-            val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
             val (selectedDate, chosenTime) = bookingInfo.split("|")
 
-
             SuccessBooking(
-                clinicName = clinicName ?: "Unknown Clinic",
-                clinicStreetName = clinicStreetName,
-                clinicID = clinicID,
                 selectedDate = selectedDate,
                 chosenTime = chosenTime,
                 modifier = Modifier,

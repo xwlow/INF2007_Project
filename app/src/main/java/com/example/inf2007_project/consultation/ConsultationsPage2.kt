@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.inf2007_project.R
@@ -87,6 +88,7 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                             item {
                                 Text(
                                     text = "No past consultations found.",
+                                    fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier
                                         .padding(16.dp)
@@ -97,7 +99,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                             items(pastConsultations.size) { index ->
                                 ConsultationItem(
                                     consultation = pastConsultations[index],
-                                    bookViewModel
+                                    bookViewModel,
+                                    navController
                                 )
                             }
                         }
@@ -106,7 +109,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                         if (upcomingConsultations.isEmpty()) {
                             item {
                                 Text(
-                                    text = "No upcoming consultations.",
+                                    text = "You have no upcoming consultations",
+                                    fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier
                                         .padding(16.dp)
@@ -126,7 +130,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                             items(upcomingConsultations.size) { index ->
                                 ConsultationItem(
                                     consultation = upcomingConsultations[index],
-                                    bookViewModel
+                                    bookViewModel,
+                                    navController
                                 )
                             }
                         }
@@ -138,7 +143,7 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
 }
 
 @Composable
-fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel) {
+fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navController: NavController) {
     // Modal
     var showDialog by remember { mutableStateOf(false) }
     Card(
@@ -189,7 +194,8 @@ fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel) {
                     // Reschedule Btn
                     Button(
                         onClick = {
-
+                            val encodedClinicInfo = Uri.encode("${consultation.clinicName}|${consultation.clinicStreetName}")
+                            navController.navigate("book/$encodedClinicInfo?consultationId=${consultation.consultationId}")
                         },
                     ) {
                         Text(text = "Reschedule")

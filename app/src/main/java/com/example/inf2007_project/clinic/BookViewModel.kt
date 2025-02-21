@@ -21,7 +21,8 @@ data class Booking(
     val doctorName: String = "",
     val chosenTime: String = "",
     val clinicName: String = "",
-    val extraInformation: String = ""
+    val extraInformation: String = "",
+    val clinicStreetName: String = "",
 )
 
 class BookViewModel : ViewModel() {
@@ -73,7 +74,8 @@ class BookViewModel : ViewModel() {
                         doctorName = doc.getString("doctorName") ?: "",
                         chosenTime = doc.getString("chosenTime") ?: "",
                         clinicName = doc.getString("clinicName") ?: "",
-                        extraInformation = doc.getString("extraInformation") ?: ""
+                        extraInformation = doc.getString("extraInformation") ?: "",
+                        clinicStreetName = doc.getString("clinicStreetName") ?: ""
                     )
                 }
 
@@ -104,6 +106,7 @@ class BookViewModel : ViewModel() {
         chosenTime: String,
         clinicName: String,
         extraInformation: String,
+        clinicStreetName: String,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
@@ -115,15 +118,6 @@ class BookViewModel : ViewModel() {
                     return@launch
                 }
 
-//                val booking = Booking(
-//                    userId = user.uid,
-//                    selectedDate = selectedDate,
-//                    doctorName = doctorName,
-//                    chosenTime = chosenTime,
-//                    clinicName = clinicName,
-//                    extraInformation = extraInformation
-//                )
-
                 // Create a Booking object WITHOUT consultationId
                 val booking = hashMapOf(
                     "userId" to user.uid,
@@ -131,12 +125,46 @@ class BookViewModel : ViewModel() {
                     "doctorName" to doctorName,
                     "chosenTime" to chosenTime,
                     "clinicName" to clinicName,
-                    "extraInformation" to extraInformation
+                    "extraInformation" to extraInformation,
+                    "clinicStreetName" to clinicStreetName
                 )
 
                 FirebaseFirestore.getInstance()
                     .collection("consultations") // Top-level collection
                     .add(booking) // Firestore generates unique ID
+                    .await()
+
+                onSuccess()
+            } catch (e: Exception) {
+                onFailure(e)
+            }
+        }
+    }
+
+    // Update Booking
+    fun updateBooking(
+        bookingId: String,
+        selectedDate: String,
+        doctorName: String,
+        chosenTime: String,
+        clinicName: String,
+        extraInformation: String,
+        onSuccess: () -> Unit = {},
+        onFailure: (Exception) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                val updatedData = mapOf(
+                    "selectedDate" to selectedDate,
+                    "doctorName" to doctorName,
+                    "chosenTime" to chosenTime,
+                    "clinicName" to clinicName,
+                    "extraInformation" to extraInformation
+                )
+
+                db.collection("consultations")
+                    .document(bookingId) // Use existing document ID
+                    .update(updatedData)
                     .await()
 
                 onSuccess()
@@ -175,4 +203,18 @@ class BookViewModel : ViewModel() {
             null
         }
     }
+
+    // Find specific consultation
+    fun getConsultation(consultationId: String, onSuccess: (Booking) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val doc = db.collection("consultations").document(consultationId).get().await()
+                val booking = doc.toObject(Booking::class.java)?.copy(consultationId = doc.id)
+                booking?.let { onSuccess(it) }
+            } catch (e: Exception) {
+                Log.e("FirestoreError", "Failed to fetch booking: $e")
+            }
+        }
+    }
+
 }

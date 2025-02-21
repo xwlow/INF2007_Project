@@ -34,9 +34,6 @@ import com.example.inf2007_project.pages.BottomNavigationBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuccessBooking(
-    clinicName: String,
-    clinicStreetName: String,
-    clinicID: String,
     selectedDate: String,
     chosenTime: String,
     modifier: Modifier = Modifier,
