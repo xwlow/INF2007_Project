@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -81,17 +82,54 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
 
             LazyColumn {
                 when (selectedTabIndex) {
-                    0 -> items(pastConsultations.size) { index ->
-                        ConsultationItem(
-                            consultation = pastConsultations[index],
-                            bookViewModel
-                        )
+                    0 -> {
+                        if (pastConsultations.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No past consultations found.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        } else {
+                            items(pastConsultations.size) { index ->
+                                ConsultationItem(
+                                    consultation = pastConsultations[index],
+                                    bookViewModel
+                                )
+                            }
+                        }
                     }
-                    1 -> items(upcomingConsultations.size) { index ->
-                        ConsultationItem(
-                            consultation = upcomingConsultations[index],
-                            bookViewModel
-                        )
+                    1 -> {
+                        if (upcomingConsultations.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No upcoming consultations.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .align(Alignment.CenterHorizontally)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp)) // Add spacing between buttons
+                                // Book an consultation Btn
+                                Button(
+                                    onClick = {
+                                        navController.navigate("clinicsTest")
+                                    }, modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(text = "Book a Consultation")
+                                }
+                            }
+                        } else {
+                            items(upcomingConsultations.size) { index ->
+                                ConsultationItem(
+                                    consultation = upcomingConsultations[index],
+                                    bookViewModel
+                                )
+                            }
+                        }
                     }
                 }
             }
