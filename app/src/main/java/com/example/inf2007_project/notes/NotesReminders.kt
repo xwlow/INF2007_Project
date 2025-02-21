@@ -69,6 +69,7 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
     val notes = remember { mutableStateListOf<Triple<String, String, String>>() }
     var isDialogOpen by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) } // Refresh trigger state
+    var selectedTabIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(refreshTrigger) {
         // Get the current user ID
@@ -142,9 +143,11 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
             Spacer(modifier = Modifier.height(16.dp))
 
             SectionHeader("Notes")
-            NotesTabs()
-            notes.forEach { (id, title, lastUpdated) ->
-                NoteItem(title, "Last updated on $lastUpdated",id, navController = navController)
+            NotesTabs(selectedTabIndex) { newIndex -> selectedTabIndex = newIndex }
+            val sortedNotes = getSortedNotes(notes, selectedTabIndex)
+
+            sortedNotes.forEach { (id, title, lastUpdated) ->
+                NoteItem(title, "Last updated on $lastUpdated", id, navController)
             }
 
             if (isDialogOpen) {
@@ -155,22 +158,29 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
             }
         }
     }
-
 }
 
 @Composable
-fun NotesTabs() {
-    var selectedTabIndex by remember { mutableStateOf(0) }
+fun NotesTabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
     val tabs = listOf("Alphabetical", "Date Created", "Date Updated")
 
     TabRow(selectedTabIndex = selectedTabIndex) {
         tabs.forEachIndexed { index, title ->
             Tab(
                 selected = selectedTabIndex == index,
-                onClick = { selectedTabIndex = index },
+                onClick = { onTabSelected(index) },
                 text = { Text(text = title) }
             )
         }
+    }
+}
+
+fun getSortedNotes(notes: List<Triple<String, String, String>>, selectedTabIndex: Int): List<Triple<String, String, String>> {
+    return when (selectedTabIndex) {
+        0 -> notes.sortedBy { it.second.lowercase() } // Alphabetical
+        1 -> notes.sortedBy { it.first } // Assuming ID represents creation date
+        2 -> notes.sortedByDescending { it.third } // Sort by last updated
+        else -> notes
     }
 }
 
@@ -416,4 +426,5 @@ fun CardDialog(
         }
     )
 }
+
 
