@@ -102,12 +102,9 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         // Consultation Booking
-        composable("book/{clinicInfo}?consultationId={consultationId}") { backStackEntry ->
-            val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
+        composable("book/{clinicName}?consultationId={consultationId}") { backStackEntry ->
             val consultationId = backStackEntry.arguments?.getString("consultationId")
-
-            //val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
-            val (clinicName, clinicStreetName) = clinicInfo.split("|")
+            val clinicName = backStackEntry.arguments?.getString("clinicName")
             var existingBooking by remember { mutableStateOf<Booking?>(null) }
 
             // Fetch existing consultation if consultationId is provided
@@ -121,7 +118,6 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
 
             BookPage(
                 clinicName = clinicName ?: "Unknown Clinic",
-                clinicStreetName = clinicStreetName,
                 modifier = Modifier,
                 navController = navController,
                 bookViewModel = bookViewModel,

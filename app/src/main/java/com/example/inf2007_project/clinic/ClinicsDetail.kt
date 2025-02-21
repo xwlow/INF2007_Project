@@ -182,9 +182,7 @@ fun ClinicsDetail(
                         /* Handle book appointment */
                         val currentUser = FirebaseAuth.getInstance().currentUser?.uid
                         if (currentUser != null) {
-//                            viewModel.addQueue(clinicID, currentUser)
-                            val encodedClinicInfo = Uri.encode("${clinicName}|${clinicStreetName}")
-                            navController.navigate("book/$encodedClinicInfo")
+                            navController.navigate("book/$clinicName")
                         }
                     },
                     modifier = Modifier.fillMaxWidth()

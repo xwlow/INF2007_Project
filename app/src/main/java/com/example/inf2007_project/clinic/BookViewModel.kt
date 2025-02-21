@@ -22,7 +22,6 @@ data class Booking(
     val chosenTime: String = "",
     val clinicName: String = "",
     val extraInformation: String = "",
-    val clinicStreetName: String = "",
 )
 
 class BookViewModel : ViewModel() {
@@ -30,12 +29,14 @@ class BookViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // StateFlow to store past and upcoming consultations
     private val _pastConsultations = MutableStateFlow<List<Booking>>(emptyList())
     val pastConsultations: StateFlow<List<Booking>> = _pastConsultations
 
     private val _upcomingConsultations = MutableStateFlow<List<Booking>>(emptyList())
     val upcomingConsultations: StateFlow<List<Booking>> = _upcomingConsultations
+
+    private val _availableSlots = MutableStateFlow<List<String>>(emptyList()) // Store available slots
+    val availableSlots: StateFlow<List<String>> = _availableSlots
 
     init {
         fetchConsultations() // Fetch consultations when ViewModel initializes
@@ -75,7 +76,6 @@ class BookViewModel : ViewModel() {
                         chosenTime = doc.getString("chosenTime") ?: "",
                         clinicName = doc.getString("clinicName") ?: "",
                         extraInformation = doc.getString("extraInformation") ?: "",
-                        clinicStreetName = doc.getString("clinicStreetName") ?: ""
                     )
                 }
 
@@ -93,9 +93,52 @@ class BookViewModel : ViewModel() {
                     }
                 }
 
+                val sortedPastList = pastList.sortedWith(compareBy(
+                    { convertToDateTime(it.selectedDate, it.chosenTime) },  // Sort by Date
+                    { it.chosenTime } // Then by Time
+                ))
+
+                val sortedUpcomingList = upcomingList.sortedWith(compareBy(
+                    { convertToDateTime(it.selectedDate, it.chosenTime) },
+                    { it.chosenTime }
+                ))
+
                 // Update StateFlow values
-                _pastConsultations.value = pastList
-                _upcomingConsultations.value = upcomingList
+                _pastConsultations.value = sortedPastList
+                _upcomingConsultations.value = sortedUpcomingList
+            }
+    }
+
+    // Function to fetch consultations
+    fun fetchAvailableTimings(clinicName: String, selectedDate: String) {
+        val user = auth.currentUser
+        if (user == null) {
+            Log.e("FirestoreError", "User not logged in")
+            return
+        }
+
+        db.collection("consultations")
+            .whereEqualTo("clinicName", clinicName)
+            .whereEqualTo("selectedDate", selectedDate)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("FirestoreError", "Query failed: ${e.message}")
+                    return@addSnapshotListener
+                }
+
+                // Extract booked consultation timings
+                val bookedTimings = snapshot?.documents?.mapNotNull { doc ->
+                    doc.getString("chosenTime")
+                } ?: emptyList()
+
+                Log.d("FirestoreSuccess", "Booked timings: $bookedTimings")
+
+                val allSlots = generateConsultationSlots(8, 17, 15) // 8 AM - 5 PM, 15 min interval
+                val availableSlotsList = allSlots.filterNot { it in bookedTimings }
+
+                Log.d("FirestoreSuccess", "Available slots: $availableSlotsList")
+
+                _availableSlots.value = availableSlotsList
             }
     }
 
@@ -106,7 +149,6 @@ class BookViewModel : ViewModel() {
         chosenTime: String,
         clinicName: String,
         extraInformation: String,
-        clinicStreetName: String,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
@@ -126,7 +168,6 @@ class BookViewModel : ViewModel() {
                     "chosenTime" to chosenTime,
                     "clinicName" to clinicName,
                     "extraInformation" to extraInformation,
-                    "clinicStreetName" to clinicStreetName
                 )
 
                 FirebaseFirestore.getInstance()

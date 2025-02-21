@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -56,7 +58,6 @@ import java.util.Locale
 @Composable
 fun BookPage(
     clinicName: String,
-    clinicStreetName: String,
     modifier: Modifier = Modifier,
     navController: NavController,
     bookViewModel: BookViewModel,
@@ -85,16 +86,18 @@ fun BookPage(
     var chosenTime by remember { mutableStateOf("") }
     var timeExpanded by remember { mutableStateOf(false) }
     val timeIcon = if (timeExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-    val consultationSlots = generateConsultationSlots(
-        startHour = 8, // Clinic opens at 8 AM
-        endHour = 17,  // Clinic closes at 5 PM
-        intervalMinutes = 15 // Each consultation lasts 15 minutes
-    )
+//    val consultationSlots = generateConsultationSlots(
+//        startHour = 8, // Clinic opens at 8 AM
+//        endHour = 17,  // Clinic closes at 5 PM
+//        intervalMinutes = 15 // Each consultation lasts 15 minutes
+//    )
+    //val consultationSlots = bookViewModel.availableSlots
+    val availableSlots by bookViewModel.availableSlots.collectAsState(initial = emptyList())
     // Extra
     var extraInformation by remember { mutableStateOf("") }
     // Modal
     var showDialog by remember { mutableStateOf(false) }
-
+    var showCalendar by remember { mutableStateOf(false) }
     // Ensure state updates when existingBooking changes
     LaunchedEffect(existingBooking) {
         existingBooking?.let {
@@ -103,7 +106,11 @@ fun BookPage(
             chosenTime = it.chosenTime
             extraInformation = it.extraInformation
         }
+        delay(300)
+        showCalendar = true
     }
+
+    bookViewModel.fetchAvailableTimings(clinicName, selectedDate)
 
     Scaffold(
         topBar = {
@@ -143,27 +150,32 @@ fun BookPage(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(text = "Selected Date: ${selectedDate}")
-                        AndroidView(
-                            factory = { context ->
-                                CalendarView(context).apply {
-                                    // Set initial date to today
-                                    val today = System.currentTimeMillis()
-                                    // One day
-                                    val oneDayInMillis = 24 * 60 * 60 * 1000
-                                    date = today
-                                    minDate = today + oneDayInMillis
+                        Text(text = "Selected Date: $selectedDate")
+                        if (showCalendar) {
+                            AndroidView(
+                                factory = { context ->
+                                    CalendarView(context).apply {
+                                        val today = System.currentTimeMillis()
+                                        val oneDayInMillis = 24 * 60 * 60 * 1000
 
-                                    // Listen for date change
-                                    setOnDateChangeListener { _, year, month, dayOfMonth ->
-                                        // Format selected date
-                                        val formattedDate = "$dayOfMonth/${month + 1}/$year"
-                                        selectedDate = formattedDate
+                                        if (selectedDate.isNotEmpty()) {
+                                            val parsedDate = parseDateToMillis(selectedDate)
+                                            date = parsedDate
+                                        } else {
+                                            date = today
+                                        }
+
+                                        minDate = today + oneDayInMillis
+
+                                        setOnDateChangeListener { _, year, month, dayOfMonth ->
+                                            val formattedDate = "$dayOfMonth/${month + 1}/$year"
+                                            selectedDate = formattedDate
+                                        }
                                     }
-                                }
-                            },
-                            modifier = Modifier.padding(top = 16.dp)
-                        )
+                                },
+                                modifier = Modifier.padding(top = 16.dp)
+                            )
+                        }
                     }
                 }
 
@@ -224,9 +236,10 @@ fun BookPage(
                         value = chosenTime,
                         onValueChange = {},
                         readOnly = true,
+                        enabled = selectedDate.isNotEmpty(),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { timeExpanded = true }
+                            .clickable(enabled = selectedDate.isNotEmpty()) { timeExpanded = true }
                             .onGloballyPositioned { coordinates ->
                                 mTextFieldSize = coordinates.size.toSize()
                             },
@@ -235,7 +248,7 @@ fun BookPage(
                             Icon(
                                 timeIcon,
                                 "Dropdown",
-                                Modifier.clickable { timeExpanded = !timeExpanded })
+                                Modifier.clickable(enabled = selectedDate.isNotEmpty()) { timeExpanded = !timeExpanded })
                         }
                     )
 
@@ -244,7 +257,7 @@ fun BookPage(
                         onDismissRequest = { timeExpanded = false },
                         modifier = Modifier.size(300.dp).width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
                     ) {
-                        consultationSlots.forEach { label ->
+                        availableSlots.forEach { label ->
                             DropdownMenuItem(
                                 text = { Text(text = label) },
                                 onClick = {
@@ -312,7 +325,6 @@ fun BookPage(
                                 chosenTime = chosenTime,
                                 clinicName = clinicName,
                                 extraInformation = extraInformation,
-                                clinicStreetName = clinicStreetName,
                                 onSuccess = {
                                     Log.e("Firestore", "Booking saved")
                                 },
@@ -332,6 +344,35 @@ fun BookPage(
         )
     }
 }
+
+fun parseDateToMillis(dateStr: String): Long {
+    return try {
+        val trimmedDate = dateStr.trim()
+
+        if (trimmedDate.isEmpty()) {
+            Log.e("horra", "selectedDate is empty, using current date.")
+            return System.currentTimeMillis()
+        }
+
+        Log.d("horra", "Trying to parse: $trimmedDate")
+
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val date = sdf.parse(trimmedDate)
+
+        if (date != null) {
+            Log.d("horra", "Parsed successfully: ${date.time}")
+            date.time
+        } else {
+            Log.e("horra", "Parsing failed, using default date")
+            System.currentTimeMillis()
+        }
+    } catch (e: Exception) {
+        Log.e("horra", "Error parsing date: ${e.message}")
+        System.currentTimeMillis() // Default to today if parsing fails
+    }
+}
+
+
 
 fun generateConsultationSlots(startHour: Int, endHour: Int, intervalMinutes: Int): List<String> {
     val slots = mutableListOf<String>()

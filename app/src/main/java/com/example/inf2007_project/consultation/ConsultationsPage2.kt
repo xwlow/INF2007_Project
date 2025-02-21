@@ -100,7 +100,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                                 ConsultationItem(
                                     consultation = pastConsultations[index],
                                     bookViewModel,
-                                    navController
+                                    navController,
+                                    upcoming = false
                                 )
                             }
                         }
@@ -131,7 +132,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                                 ConsultationItem(
                                     consultation = upcomingConsultations[index],
                                     bookViewModel,
-                                    navController
+                                    navController,
+                                    upcoming = true
                                 )
                             }
                         }
@@ -143,7 +145,7 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
 }
 
 @Composable
-fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navController: NavController) {
+fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navController: NavController, upcoming: Boolean) {
     // Modal
     var showDialog by remember { mutableStateOf(false) }
     Card(
@@ -175,6 +177,8 @@ fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navCon
             ) {
                 Text(consultation.clinicName)
                 Text(consultation.selectedDate + " @ " + consultation.chosenTime)
+
+                if (upcoming) {
                 Row {
                     // Cancel Btn
                     Button(
@@ -194,16 +198,16 @@ fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navCon
                     // Reschedule Btn
                     Button(
                         onClick = {
-                            val encodedClinicInfo = Uri.encode("${consultation.clinicName}|${consultation.clinicStreetName}")
-                            navController.navigate("book/$encodedClinicInfo?consultationId=${consultation.consultationId}")
+                            navController.navigate("book/${consultation.clinicName}?consultationId=${consultation.consultationId}")
                         },
                     ) {
                         Text(text = "Reschedule")
                     }
                 }
+                    }
             }
         }
-        // Popup Modal with AlertDialog
+
         if (showDialog) {
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = {
@@ -223,6 +227,7 @@ fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navCon
                                 onSuccess = { Log.d("Firestore", "Deleted successfully!") },
                                 onFailure = { e -> Log.e("Firestore", "Failed to delete", e) }
                             )
+                            showDialog = false
                         }
                     ) {
                         Text("Confirm")
