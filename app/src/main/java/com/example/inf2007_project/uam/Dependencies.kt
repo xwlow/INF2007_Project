@@ -166,7 +166,7 @@ fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit:
             Text("Name: ${dependency.name}")
             Text("NRIC: ${dependency.nric}")
             Text("Relationship: ${dependency.relationship}")
-//            Text("Phone: ${dependency.phone}")
+            Text("Phone: ${dependency.phone}")
             Text("Email: ${dependency.email}")
         }
         IconButton(onClick = {
@@ -193,7 +193,7 @@ fun DependencyEditDialog(
     var name by remember { mutableStateOf(dependency.name) }
     var nric by remember { mutableStateOf(dependency.nric) }
     var relationship by remember { mutableStateOf(dependency.relationship) }
-//    var phone by remember { mutableStateOf(dependency.phone) }
+    var phone by remember { mutableStateOf(dependency.phone) }
     var email by remember { mutableStateOf(dependency.email) }
     var dependencyId by remember { mutableStateOf(dependency.dependencyId) }
     var searchedUser by remember { mutableStateOf<DependencyData?>(null) }
@@ -208,11 +208,14 @@ fun DependencyEditDialog(
 
     val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
-    val isSaveEnabled by remember {
+    val initialRelationship = remember { dependency.relationship }  // Store original value
+
+    val isSaveEnabled by remember(initialRelationship, relationship) {
         derivedStateOf {
-            searchedUser != null && relationship.isNotBlank()
+            relationship.isNotBlank() && relationship != initialRelationship
         }
     }
+
 
 
 
@@ -240,6 +243,7 @@ fun DependencyEditDialog(
     }
 
     AlertDialog(
+
         onDismissRequest = { onDismiss() },
         confirmButton = {
             Button(onClick = {
@@ -249,7 +253,7 @@ fun DependencyEditDialog(
                             name = searchedUser!!.name,
                             nric = searchedUser!!.nric,
                             relationship = relationship,
-//                            phone = searchedUser!!.phone,
+                            phone = searchedUser!!.phone,
                             email = searchedUser!!.email,
                             dependencyId = searchedUser!!.dependencyId // Store Elderly UID
                         )
@@ -308,7 +312,7 @@ fun DependencyEditDialog(
                 searchedUser?.let { user -> searchedUser?.let { user ->
                     name = user.name
                     nric = user.nric
-//                    phone = user.phone
+                    phone = user.phone
                     email = user.email
                 }
 
@@ -321,7 +325,7 @@ fun DependencyEditDialog(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text("Name: ${user.name}")
                             Text("NRIC: ${user.nric}")
-//                            Text("Phone: ${user.phone}")
+                            Text("Phone: ${user.phone}")
                             Text("Email: ${user.email}")
                             Spacer(modifier = Modifier.height(8.dp))
                             //Text("UID: ${user.id}")
@@ -441,6 +445,6 @@ data class DependencyData(
     var name: String = "",
     var nric: String = "",
     var relationship: String = "",
-//    var phone: String = "",
+    var phone: String = "",
     var email: String = ""
 )

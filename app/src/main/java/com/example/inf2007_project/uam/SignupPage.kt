@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -16,6 +17,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +32,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
     var cfmPassword by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var nric by remember { mutableStateOf("") }
+    var contact by remember { mutableStateOf("") }
     var userRole by remember { mutableStateOf("") }
     var mExpanded by remember { mutableStateOf(false) }
 
@@ -70,6 +73,22 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
 
         OutlinedTextField(value = nric, onValueChange = { nric = it }, label = { Text(text = "NRIC") }, singleLine = true)
         Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = contact,
+            onValueChange = {
+                if (it.length <= 8) {
+                    contact = it
+                } else {
+                    Toast.makeText(context, "Contact number cannot be more than 8 characters", Toast.LENGTH_SHORT).show()
+                }
+            },
+            label = { Text(text = "Contact Number") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
 
         // Box to properly position the dropdown menu
         Box {
@@ -129,6 +148,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
             data["name"] = name
             data["nric"] = nric
             data["email"] = email
+            data["phone"] = contact
             data["userRole"] = userRole
 
             if (password == cfmPassword && password.length >= 6) {
