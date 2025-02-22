@@ -81,18 +81,34 @@ fun ProfilePage(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start
         ) {
-            Text(
-                text = "Profile Page",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =  Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Profile Page",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                //add, view and delete b dependencies button here
+                Button(
+                    onClick = {
+                        navController.navigate("dependencies") },
+                    modifier = Modifier.width(180.dp)
+                ) {
+                    Text("Dependencies")
+                }
+            }
 
             if (currentUser == null) {
                 Text("User data not available. Please log in.")
             } else {
 
                 // row for image here
-                
+
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxWidth()

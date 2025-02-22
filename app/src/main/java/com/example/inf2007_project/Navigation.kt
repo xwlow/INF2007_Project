@@ -35,6 +35,7 @@ import com.example.inf2007_project.clinic.QueueViewModel
 import com.example.inf2007_project.clinic.SuccessBooking
 import com.example.inf2007_project.consultation.ConsultationsPage2
 import com.example.inf2007_project.uam.AuthViewModel
+import com.example.inf2007_project.uam.DependenciesPage
 import com.example.inf2007_project.uam.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -60,9 +61,11 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("notes&reminders"){
             NotesRemindersPage(modifier, navController, authViewModel, testViewModel)
         }
-        composable("messages"){
-            Messaging(modifier, navController, authViewModel, testViewModel)
+        composable("messages/{dependencyId}"){ backStackEntry ->
+            val dependencyId = backStackEntry.arguments?.getString("dependencyId") ?: ""
+            Messaging(modifier, navController, dependencyId)
         }
+
         composable("queue/{clinicInfo}") { backStackEntry ->
             val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
             val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")
@@ -153,6 +156,10 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
 
         composable("profile") {
             ProfilePage(modifier, navController, authViewModel)
+        }
+
+        composable("dependencies"){
+            DependenciesPage(navController = navController)
         }
 
         composable("chatbot"){

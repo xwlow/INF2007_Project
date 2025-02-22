@@ -28,8 +28,7 @@ import kotlinx.coroutines.launch
 fun Messaging(
     modifier: Modifier = Modifier,
     navController: NavController,
-    authViewModel: AuthViewModel,
-    testViewModel: TestViewModel
+    dependencyId: String
 ) {
     var messageText by remember { mutableStateOf(TextFieldValue("")) }
     var messages by remember { mutableStateOf(listOf<Message>()) }
@@ -37,22 +36,22 @@ fun Messaging(
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
     val scope = rememberCoroutineScope()
-    val recipientId = RecipientHolder.recipientId // Assume this holds the recipient's ID.
+    //val recipientId = RecipientHolder.recipientId // Assume this holds the recipient's ID.
 
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
-        if (recipientId != null) {
-            Log.d("RecipientID", recipientId)
+        if (dependencyId != null) {
+            Log.d("RecipientID", dependencyId)
             currentUser?.uid?.let { Log.d("SenderID", it) }
 
             val query1 = db.collection("messages")
                 .whereEqualTo("senderId", currentUser?.uid)
-                .whereEqualTo("recipientId", recipientId)
+                .whereEqualTo("recipientId", dependencyId)
                 .orderBy("timestamp")
 
             val query2 = db.collection("messages")
-                .whereEqualTo("senderId", recipientId)
+                .whereEqualTo("senderId", dependencyId)
                 .whereEqualTo("recipientId", currentUser?.uid)
                 .orderBy("timestamp")
 
@@ -151,7 +150,7 @@ fun Messaging(
                                 val messageData = mapOf(
                                     "message" to messageText.text,
                                     "senderId" to currentUser?.uid,
-                                    "recipientId" to recipientId,
+                                    "recipientId" to dependencyId,
                                     "timestamp" to Timestamp.now()
                                 )
                                 db.collection("messages").add(messageData)
