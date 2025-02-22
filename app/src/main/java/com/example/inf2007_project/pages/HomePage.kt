@@ -128,9 +128,9 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
-        BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
+        //BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
         BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
-        BottomNavItem("Contacts", Icons.Filled.Call, "contacts"),
+        BottomNavItem("Dependency", Icons.Filled.Call, "dependencies"),
 
         BottomNavItem("Consultations", Icons.Filled.ThumbUp, "consultations"),
 

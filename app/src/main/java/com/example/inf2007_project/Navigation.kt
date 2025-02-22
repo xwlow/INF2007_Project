@@ -47,9 +47,11 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("notes&reminders"){
             NotesRemindersPage(modifier, navController, authViewModel, testViewModel)
         }
-        composable("messages"){
-            Messaging(modifier, navController, authViewModel, testViewModel)
+        composable("messages/{dependencyId}"){ backStackEntry ->
+            val dependencyId = backStackEntry.arguments?.getString("dependencyId") ?: ""
+            Messaging(modifier, navController, dependencyId)
         }
+
         composable("queue/{clinicInfo}") { backStackEntry ->
             val clinicInfo = backStackEntry.arguments?.getString("clinicInfo") ?: ""
             val (clinicName, clinicStreetName, clinicID) = clinicInfo.split("|")

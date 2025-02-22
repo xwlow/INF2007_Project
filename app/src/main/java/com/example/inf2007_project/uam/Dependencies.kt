@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavController
+import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 //import kotlinx.coroutines.flow.internal.NoOpContinuation.context
@@ -40,6 +42,7 @@ fun DependenciesPage(navController: NavController) {
     var selectedDependency by remember { mutableStateOf<DependencyData?>(null) }
     var isAddingNew by remember { mutableStateOf(false) }
 
+
     LaunchedEffect(userId) {
         if (userId != null) {
             firestore.collection("dependencies")
@@ -51,7 +54,11 @@ fun DependenciesPage(navController: NavController) {
                     }
                     if (snapshot != null) {
                         dependencies = snapshot.documents.mapNotNull { doc ->
-                            doc.toObject(DependencyData::class.java)?.copy(dependencyId = doc.id)
+                            doc.toObject(DependencyData::class.java)?.let { dependency ->
+                                val depId = dependency.dependencyId.takeIf { !it.isNullOrEmpty() } ?: doc.id
+                                Log.d("Firestore Data", "Retrieved Dependency: ${dependency.name}, ID: $depId")
+                                dependency.copy(dependencyId = depId)
+                            }
                         }
                     }
                 }
@@ -69,6 +76,9 @@ fun DependenciesPage(navController: NavController) {
                 }
             )
         },
+        bottomBar = {
+            BottomNavigationBar(navController)
+        },
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         Column(
@@ -84,7 +94,8 @@ fun DependenciesPage(navController: NavController) {
                     dependency = dependency,
                     // auto increment for dep
                     dependencyNumber = index + 1,
-                    onEdit = { selectedDependency = dependency }
+                    onEdit = { selectedDependency = dependency },
+                    navController
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -142,7 +153,9 @@ fun DependenciesPage(navController: NavController) {
 
 // display dep information
 @Composable
-fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit) {
+fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController) {
+    val messageIcon = Icons.Filled.MailOutline
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onEdit() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -156,6 +169,13 @@ fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit:
             Text("Phone: ${dependency.phone}")
             Text("Email: ${dependency.email}")
         }
+        IconButton(onClick = {
+            navController.navigate("messages/${dependency.dependencyId}")
+            Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+        }) {
+            Icon(imageVector = Icons.Filled.MailOutline, contentDescription = "Send Message")
+        }
+
     }
 }
 
@@ -165,7 +185,7 @@ fun DependencyEditDialog(
     dependency: DependencyData,
     onDismiss: () -> Unit,
     onSave: (DependencyData) -> Unit,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
 ) {
     val firestore = FirebaseFirestore.getInstance()
 
@@ -187,6 +207,7 @@ fun DependencyEditDialog(
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
 
     val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+
 
 
     fun searchUser() {
@@ -290,7 +311,6 @@ fun DependencyEditDialog(
                             Spacer(modifier = Modifier.height(8.dp))
                             //Text("UID: ${user.id}")
                         }
-
                     }
                 }
                 Box {
