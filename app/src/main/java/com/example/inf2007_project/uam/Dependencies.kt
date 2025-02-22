@@ -166,7 +166,7 @@ fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit:
             Text("Name: ${dependency.name}")
             Text("NRIC: ${dependency.nric}")
             Text("Relationship: ${dependency.relationship}")
-            Text("Phone: ${dependency.phone}")
+//            Text("Phone: ${dependency.phone}")
             Text("Email: ${dependency.email}")
         }
         IconButton(onClick = {
@@ -193,7 +193,7 @@ fun DependencyEditDialog(
     var name by remember { mutableStateOf(dependency.name) }
     var nric by remember { mutableStateOf(dependency.nric) }
     var relationship by remember { mutableStateOf(dependency.relationship) }
-    var phone by remember { mutableStateOf(dependency.phone) }
+//    var phone by remember { mutableStateOf(dependency.phone) }
     var email by remember { mutableStateOf(dependency.email) }
     var dependencyId by remember { mutableStateOf(dependency.dependencyId) }
     var searchedUser by remember { mutableStateOf<DependencyData?>(null) }
@@ -207,6 +207,12 @@ fun DependencyEditDialog(
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
 
     val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+
+    val isSaveEnabled by remember {
+        derivedStateOf {
+            searchedUser != null && relationship.isNotBlank()
+        }
+    }
 
 
 
@@ -243,7 +249,7 @@ fun DependencyEditDialog(
                             name = searchedUser!!.name,
                             nric = searchedUser!!.nric,
                             relationship = relationship,
-                            phone = searchedUser!!.phone,
+//                            phone = searchedUser!!.phone,
                             email = searchedUser!!.email,
                             dependencyId = searchedUser!!.dependencyId // Store Elderly UID
                         )
@@ -256,7 +262,10 @@ fun DependencyEditDialog(
                         )
                     )
                 }
-            }) {
+            },
+                // field is not empty, save button enabled
+                enabled = isSaveEnabled
+            ) {
                 Text("Save")
             }
         },
@@ -296,7 +305,13 @@ fun DependencyEditDialog(
                 }
 
                 // Display searched user details if found
-                searchedUser?.let { user ->
+                searchedUser?.let { user -> searchedUser?.let { user ->
+                    name = user.name
+                    nric = user.nric
+//                    phone = user.phone
+                    email = user.email
+                }
+
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -306,7 +321,7 @@ fun DependencyEditDialog(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text("Name: ${user.name}")
                             Text("NRIC: ${user.nric}")
-                            Text("Phone: ${user.phone}")
+//                            Text("Phone: ${user.phone}")
                             Text("Email: ${user.email}")
                             Spacer(modifier = Modifier.height(8.dp))
                             //Text("UID: ${user.id}")
@@ -426,6 +441,6 @@ data class DependencyData(
     var name: String = "",
     var nric: String = "",
     var relationship: String = "",
-    var phone: String = "",
+//    var phone: String = "",
     var email: String = ""
 )
