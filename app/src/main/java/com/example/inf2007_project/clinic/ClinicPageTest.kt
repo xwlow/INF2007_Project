@@ -79,7 +79,6 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
     Log.d("Fetched Clinics", places.toString())
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
         bottomBar = {
             BottomNavigationBar(navController)
         }

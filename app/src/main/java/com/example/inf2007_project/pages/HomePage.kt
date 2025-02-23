@@ -62,7 +62,6 @@ fun HomePage(modifier: Modifier = Modifier, navController : NavController, authV
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
         bottomBar = {
             BottomNavigationBar(navController)
         }

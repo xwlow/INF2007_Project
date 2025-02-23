@@ -100,7 +100,6 @@ fun Messaging(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
         bottomBar = { BottomNavigationBar(navController) }
     ) { paddingValues ->
         Column(

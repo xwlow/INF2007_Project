@@ -43,7 +43,6 @@ fun ChatBotScreen(modifier: Modifier = Modifier, navController: NavController) {
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text("Health Chatbot", fontSize = 18.sp) },

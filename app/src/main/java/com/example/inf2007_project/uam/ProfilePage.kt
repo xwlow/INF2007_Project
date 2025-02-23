@@ -95,7 +95,6 @@ fun ProfilePage(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
         bottomBar = {
             BottomNavigationBar(navController)
         }
