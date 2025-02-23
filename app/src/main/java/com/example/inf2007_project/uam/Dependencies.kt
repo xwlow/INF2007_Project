@@ -38,6 +38,7 @@ fun DependenciesPage(navController: NavController) {
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
+    //val documentId = remember { "" }
     var dependencies by remember { mutableStateOf(emptyList<DependencyData>()) }
     var selectedDependency by remember { mutableStateOf<DependencyData?>(null) }
     var isAddingNew by remember { mutableStateOf(false) }
@@ -55,15 +56,20 @@ fun DependenciesPage(navController: NavController) {
                     if (snapshot != null) {
                         dependencies = snapshot.documents.mapNotNull { doc ->
                             doc.toObject(DependencyData::class.java)?.let { dependency ->
-                                val depId = dependency.dependencyId.takeIf { !it.isNullOrEmpty() } ?: doc.id
-                                Log.d("Firestore Data", "Retrieved Dependency: ${dependency.name}, ID: $depId")
-                                dependency.copy(dependencyId = depId)
+                                val documentId = doc.id // Firestore document ID (for updates/deletes)
+                                val dependencyId = dependency.dependencyId ?: documentId // Elderly ID reference
+
+                                Log.d("Firestore Data", "Retrieved Dependency: ${dependency.name}, Doc ID: $documentId, Dependency ID: $dependencyId")
+
+                                dependency.copy(dependencyId = dependencyId, documentId = documentId) // Store both IDs
                             }
                         }
                     }
                 }
         }
     }
+
+
 
     Scaffold(
         topBar = {
@@ -119,18 +125,18 @@ fun DependenciesPage(navController: NavController) {
                 onDismiss = { selectedDependency = null },
                 onSave = { updatedDependency ->
                     // Call function to update only the relationship field
-                    updateDependencyRelationship(selectedDependency!!.dependencyId!!, updatedDependency.relationship, firestore)
+                    updateDependencyRelationship(selectedDependency!!.documentId!!, updatedDependency.relationship, firestore)
 
                     // Update only the relationship field in the local state
                     dependencies = dependencies.map {
-                        if (it.dependencyId == updatedDependency.dependencyId) it.copy(relationship = updatedDependency.relationship) else it
+                        if (it.documentId == updatedDependency.documentId) it.copy(relationship = updatedDependency.relationship) else it
                     }
                     Log.d("Update Dependency Test", "Updating relationship: ${updatedDependency.relationship}")
                     selectedDependency = null
                 },
                 onDelete = {
-                    deleteDependencyFromFirestore(selectedDependency!!.dependencyId!!, firestore)
-                    dependencies = dependencies.filterNot { it.dependencyId == selectedDependency!!.dependencyId }
+                    deleteDependencyFromFirestore(selectedDependency!!.documentId!!, firestore)
+                    dependencies = dependencies.filterNot { it.documentId == selectedDependency!!.documentId }
                     selectedDependency = null
                 }
             )
@@ -396,42 +402,63 @@ fun DependencyEditDialog(
 //}
 
 // firebase delete dep
-fun deleteDependencyFromFirestore(dependencyId: String, firestore: FirebaseFirestore) {
-    firestore.collection("dependencies").document(dependencyId).delete()
-    Log.d("Delete Dependency", "Deleted dependency with id: $dependencyId")
+fun deleteDependencyFromFirestore(documentId: String, firestore: FirebaseFirestore) {
+    firestore.collection("dependencies").document(documentId).delete()
+    Log.d("Delete Dependency", "Deleted dependency with id: $documentId")
 }
 
 // firebase add dep
-fun addDependencyToFirestore(dependency: DependencyData, firestore: FirebaseFirestore, userId: String, context: Context) {
+fun addDependencyToFirestore(
+    dependency: DependencyData,
+    firestore: FirebaseFirestore,
+    userId: String,
+    context: Context
+) {
+    // Convert DependencyData to a Map without "documentId"
+    val dependencyMap = hashMapOf(
+        "dependencyId" to dependency.dependencyId,
+        "name" to dependency.name,
+        "userId" to userId,
+        "email" to dependency.email,
+        "nric" to dependency.nric,
+        "phone" to dependency.phone,
+        "relationship" to dependency.relationship
+        )
+
     firestore.collection("dependencies")
-        .whereEqualTo("userId", userId)  // Ensure same user
-        .whereEqualTo("dependencyId", dependency.dependencyId)  // Check if dependency already exists
+        .whereEqualTo("userId", userId)
+        .whereEqualTo("dependencyId", dependency.dependencyId)
         .get()
         .addOnSuccessListener { result ->
             if (result.isEmpty) {
-                // No duplicate found, proceed with adding
+                // Add dependency without documentId
                 firestore.collection("dependencies")
-                    .add(dependency.copy(userId = userId))
-                    .addOnSuccessListener { Log.d("Create Dependency", "Dependency created successfully") }
-                    .addOnFailureListener { Log.e("Create Dependency Error", "Failed to create dependency: ${it.message}") }
+                    .add(dependencyMap)
+                    .addOnSuccessListener { documentRef ->
+                        Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
+                        Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
+                        Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
+                    }
             } else {
-                // Dependency already exists, show error message
                 Log.e("Create Dependency Error", "Dependency already exists for this user!")
                 Toast.makeText(context, "Duplicate Record Found!", Toast.LENGTH_SHORT).show()
             }
         }
         .addOnFailureListener { e ->
             Log.e("Create Dependency Error", "Error checking for duplicates: ${e.message}")
-            //Toast.makeText(context, "Duplicate Record Found!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Error checking for duplicates. Try again.", Toast.LENGTH_SHORT).show()
         }
 }
 
 
-fun updateDependencyRelationship(dependencyId: String, newRelationship: String, firestore: FirebaseFirestore) {
-    firestore.collection("dependencies").document(dependencyId)
+fun updateDependencyRelationship(documentId: String, newRelationship: String, firestore: FirebaseFirestore) {
+    firestore.collection("dependencies").document(documentId)
         .update("relationship", newRelationship)
         .addOnSuccessListener {
-            Log.d("Update Dependency", "Relationship with $dependencyId updated successfully to: $newRelationship")
+            Log.d("Update Dependency", "Relationship with $documentId updated successfully to: $newRelationship")
         }
         .addOnFailureListener { e ->
             Log.e("Update Dependency Error", "Failed to update relationship: ${e.message}")
@@ -456,6 +483,7 @@ fun updateDependencyRelationship(dependencyId: String, newRelationship: String, 
 
 // info in the form
 data class DependencyData(
+    var documentId: String? = null,
     var dependencyId: String? = null, //dependency id --> elderly id
     var userId: String? = null, //caretaker id --> current userid
     var name: String = "",
