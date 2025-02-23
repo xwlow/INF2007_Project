@@ -53,6 +53,7 @@ fun ProfilePage(
     var email by remember { mutableStateOf( "") }
     var phone by remember { mutableStateOf(currentUser?.phoneNumber ?: "") }
     var DoB by remember { mutableStateOf("") }
+    var nric by remember { mutableStateOf("") }
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
@@ -74,6 +75,7 @@ fun ProfilePage(
             email = it.email
             phone =  it.phone
             DoB = it.dob
+            nric = it.nric
         }
     }
 
@@ -152,7 +154,18 @@ fun ProfilePage(
                         //value = currentUser.email ?: "Not Available",
                         value = email,
                         onValueChange = {email = it },
+                        enabled = false,
                         label = { Text("Email") },
+                        readOnly = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        //value = currentUser.email ?: "Not Available",
+                        value = nric,
+                        onValueChange = {nric = it },
+                        enabled = false,
+                        label = { Text("NRIC") },
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -197,7 +210,7 @@ fun ProfilePage(
                     Button(
                         onClick = {
                             // Save profile changes
-                            profileViewModel.updateProfile(name, email, phone, DoB)
+                            profileViewModel.updateProfile(name, email, phone, DoB, nric)
                             //updateFirebaseAuthProfile(name, phone)
                             profileViewModel.saveUserInfo()
                             Toast.makeText(context, "Profile updated!", Toast.LENGTH_SHORT).show()
