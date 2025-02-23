@@ -187,7 +187,9 @@ fun DependencyEditDialog(
     onSave: (DependencyData) -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
+
 
 
     var name by remember { mutableStateOf(dependency.name) }
@@ -202,6 +204,7 @@ fun DependencyEditDialog(
     //var relationship by remember { mutableStateOf("") }
     var mExpanded by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(false) }
+    var isEmpty by remember { mutableStateOf(false) }
 
     val relationshipType = listOf("Child", "Cousin", "Friend")
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -294,15 +297,28 @@ fun DependencyEditDialog(
                 // NRIC Search Field
                 OutlinedTextField(
                     value = nric,
-                    onValueChange = { nric = it },
+                    onValueChange = { if (it.length <= 9) {
+                        nric = it
+                    } else {
+                        Toast.makeText(context, "NRIC cannot be more than 9 characters", Toast.LENGTH_SHORT).show()
+                    }},
                     label = { Text("NRIC") },
-                    isError = searchError,
-                    supportingText = { if (searchError) Text("No user found with this NRIC") },
+                    isError = searchError || isEmpty,
+                    supportingText = { if (searchError) Text("No user found with this NRIC")
+                                     else if(isEmpty) Text("NRIC Field is Empty")},
                     readOnly = dependency.dependencyId != null // Make it read-only if updating
                 )
 
                 Button(
-                    onClick = { searchUser() },
+                    onClick = {
+                        if(nric.isBlank()){
+                            isEmpty = true
+                        }
+                        else{
+                            searchUser()
+                        }
+
+                         },
                     enabled = !isSearching && dependency.dependencyId == null
                 ) {
                     Text(if (isSearching) "Searching..." else "Search User")
