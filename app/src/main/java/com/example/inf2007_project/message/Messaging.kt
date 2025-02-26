@@ -40,13 +40,20 @@ fun Messaging(
     val currentUser = auth.currentUser
     val scope = rememberCoroutineScope()
     //val recipientId = RecipientHolder.recipientId // Assume this holds the recipient's ID.
-
+    var recipientName by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         if (dependencyId != null) {
             Log.d("RecipientID", dependencyId)
             currentUser?.uid?.let { Log.d("SenderID", it) }
+            db.collection("userDetail").document(dependencyId).get()
+                .addOnSuccessListener { document ->
+                    recipientName = document.getString("name") ?: "Unknown"
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error fetching recipient name", e)
+                }
 
             val query1 = db.collection("messages")
                 .whereEqualTo("senderId", currentUser?.uid)
@@ -105,7 +112,7 @@ fun Messaging(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Messaging <Name>") },
+                title = { Text("Messaging $recipientName") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
