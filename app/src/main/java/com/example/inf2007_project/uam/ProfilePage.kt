@@ -120,13 +120,13 @@ fun ProfilePage(
                 )
 
                 //add, view and delete b dependencies button here
-                Button(
-                    onClick = {
-                        navController.navigate("dependencies") },
-                    modifier = Modifier.width(180.dp)
-                ) {
-                    Text("Dependencies")
-                }
+//                Button(
+//                    onClick = {
+//                        navController.navigate("dependencies") },
+//                    modifier = Modifier.width(180.dp)
+//                ) {
+//                    Text("Dependencies")
+//                }
             }
 
             if (currentUser == null) {
@@ -218,6 +218,19 @@ fun ProfilePage(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Update")
+                    }
+
+                    //User Signout Function
+
+                    Button(
+                        onClick = {
+                            authViewModel.signout()
+                            Toast.makeText(context, "User successfully signed out!", Toast.LENGTH_SHORT).show()
+
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Sign Out")
                     }
 
                     //for deleting account button

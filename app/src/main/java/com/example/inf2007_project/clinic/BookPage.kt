@@ -352,8 +352,6 @@ fun parseDateToMillis(dateStr: String): Long {
     }
 }
 
-
-
 fun generateConsultationSlots(startHour: Int, endHour: Int, intervalMinutes: Int): List<String> {
     val slots = mutableListOf<String>()
     var currentHour = startHour
@@ -367,6 +365,7 @@ fun generateConsultationSlots(startHour: Int, endHour: Int, intervalMinutes: Int
             currentMinute,
             if (currentHour >= 12) "PM" else "AM"
         )
+
         slots.add(formattedTime)
 
         // Increment time by the interval
