@@ -153,14 +153,13 @@ fun ProfilePage(
                         //value = currentUser.email ?: "Not Available",
                         value = email,
                         onValueChange = {email = it },
-                        enabled = false,
+                        //enabled = true,
                         label = { Text("Email") },
-                        readOnly = true,
+                        //readOnly = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     OutlinedTextField(
-                        //value = currentUser.email ?: "Not Available",
                         value = nric,
                         onValueChange = {nric = it },
                         enabled = false,
@@ -236,9 +235,8 @@ fun ProfilePage(
                     //for deleting account button
                     Button(
                         onClick = {
-                            profileViewModel.deleteProfile()
+                            profileViewModel.deleteProfile(authViewModel)
                             Toast.makeText(context, "User deleted!", Toast.LENGTH_SHORT).show()
-
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

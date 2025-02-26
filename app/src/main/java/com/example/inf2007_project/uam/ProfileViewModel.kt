@@ -19,7 +19,7 @@ class ProfileViewModel : ViewModel() {
 
     // to be activated in login screen
     fun getUserUID(): String {
-        return FirebaseAuth.getInstance().currentUser?.uid ?:""
+        return FirebaseAuth.getInstance().currentUser?.uid ?: ""
     }
 
     fun saveUserInfo() {
@@ -67,9 +67,12 @@ class ProfileViewModel : ViewModel() {
                     val email = document.getString("email") ?: ""
                     val phone = document.getString("phone") ?: ""
                     val dob = document.getString("DoB") ?: ""
-                    val nric  = document.getString("nric") ?: ""
+                    val nric = document.getString("nric") ?: ""
                     _userDetails.value = UserDetails(name, email, phone, dob, nric)
-                    Log.d("ProfileViewModel", "User details fetched: $name, $email,$phone, $dob, $nric for UID: $userUID")
+                    Log.d(
+                        "ProfileViewModel",
+                        "User details fetched: $name, $email,$phone, $dob, $nric for UID: $userUID"
+                    )
                 } else {
                     Log.d("ProfileViewModel", "No user data found")
                     _userDetails.value = UserDetails("", "", "", "", "")
@@ -79,47 +82,56 @@ class ProfileViewModel : ViewModel() {
                 Log.e("ProfileViewModel", "Failed to fetch user details", e)
                 _userDetails.value = UserDetails("", "", "", "", "")
             }
-        }
+    }
 
-        fun updateProfile(name: String, email: String, phone: String, dob: String, nric: String) {
-            val userUID = getUserUID()
-            if (userUID.isEmpty()) return
+    fun updateProfile(name: String, email: String, phone: String, dob: String, nric: String) {
+        val userUID = getUserUID()
+        if (userUID.isEmpty()) return
 
-            val userInfoRef = db.collection("userDetail").document(userUID)
-            val updateData = hashMapOf(
-                //"userUID" to userUID,
-                "name" to name,
-                "email" to email,
-                "phone" to phone,
-                "DoB" to dob,
-                "nric" to nric
-            )
+        val userInfoRef = db.collection("userDetail").document(userUID)
+        val updateData = hashMapOf(
+            //"userUID" to userUID,
+            "name" to name,
+            "email" to email,
+            "phone" to phone,
+            "DoB" to dob,
+            "nric" to nric
+        )
 
-            userInfoRef.set(updateData, SetOptions.merge())
-                .addOnSuccessListener {
-                    Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
-                    _userDetails.value = UserDetails(name, email, phone, dob, nric)
-                }
-                .addOnFailureListener { e ->
-                    Log.e("ProfileViewModel", "Error updating profile", e)
-                }
-        }
+        userInfoRef.set(updateData, SetOptions.merge())
+            .addOnSuccessListener {
+                Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
+                _userDetails.value = UserDetails(name, email, phone, dob, nric)
+            }
+            .addOnFailureListener { e ->
+                Log.e("ProfileViewModel", "Error updating profile", e)
+            }
 
-        fun deleteProfile() {
-            val user = auth.currentUser
-            val userUID = getUserUID()
-            if (userUID.isEmpty()) return
+        val user = auth.currentUser
+        user?.verifyBeforeUpdateEmail(email)
+        Log.d("Update Email", "New email $email")
+    }
 
-            val userInfoRef = db.collection("userDetail").document(userUID)
-            userInfoRef?.delete()
-            user?.delete()
-                ?.addOnCompleteListener{ task ->
-                    if (task.isSuccessful) {
-                        Log.d("Firebase", "User account deleted successfully.")
-                    } else {
-                        Log.w("Firebase", "Error deleting user account", task.exception)
+    fun deleteProfile(authViewModel: AuthViewModel) {
+        var user = auth.currentUser
+        val userUID = getUserUID()
+        if (userUID.isEmpty()) return
+
+        val userInfoRef = db.collection("userDetail").document(userUID)
+        userInfoRef.delete().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("Firebase", "User info deleted successfully.")
+                user?.delete()
+                    ?.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Log.d("Firebase", "User account deleted successfully.")
+                            Log.d("Current User", user.toString())
+                            authViewModel.signout()
+                        } else {
+                            Log.w("Firebase", "Error deleting user account", task.exception)
+                        }
                     }
-                }
+            }
 
         }
     }
@@ -142,4 +154,11 @@ class ProfileViewModel : ViewModel() {
 //    }
 //}
 
-data class UserDetails(val name: String, val email: String, val phone: String, val dob: String, val nric: String)
+    data class UserDetails(
+        val name: String,
+        val email: String,
+        val phone: String,
+        val dob: String,
+        val nric: String
+    )
+}
