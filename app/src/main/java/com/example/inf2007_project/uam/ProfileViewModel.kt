@@ -120,6 +120,7 @@ class ProfileViewModel : ViewModel() {
                         Log.w("Firebase", "Error deleting user account", task.exception)
                     }
                 }
+
         }
     }
 

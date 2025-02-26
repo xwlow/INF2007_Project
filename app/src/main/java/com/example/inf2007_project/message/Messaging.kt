@@ -40,7 +40,7 @@ fun Messaging(
     val currentUser = auth.currentUser
     val scope = rememberCoroutineScope()
     //val recipientId = RecipientHolder.recipientId // Assume this holds the recipient's ID.
-    var recipientName by remember { mutableStateOf("") }
+    var recipientName by remember { mutableStateOf("")}
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {

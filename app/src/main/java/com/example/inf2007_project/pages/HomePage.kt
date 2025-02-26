@@ -188,7 +188,7 @@ fun UpcomingConsultationsSection(navController: NavController) {
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
-        //BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
+        BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
         BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
         BottomNavItem("Dependency", Icons.Filled.Call, "dependencies"),
 

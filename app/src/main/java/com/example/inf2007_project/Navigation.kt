@@ -55,7 +55,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("home"){
             HomePage(modifier, navController, authViewModel, testViewModel)
         }
-        composable("clinics"){
+        composable("clinicsTest"){
             ClinicsPage(modifier, navController, authViewModel, testViewModel)
         }
         composable("notes&reminders"){
@@ -78,7 +78,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
                 navController = navController
             )
         }
-        composable("clinicsTest"){
+        composable("clinics"){
             ClinicsPageTest(modifier, navController, authViewModel, testViewModel, nearbySearchViewModel)
         }
 
