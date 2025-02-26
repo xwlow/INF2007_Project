@@ -11,13 +11,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -95,6 +99,13 @@ fun DependenciesPage(navController: NavController) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
+            Button(
+                onClick = { isAddingNew = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Add Dependency")
+            }
+            Spacer(modifier = Modifier.height(24.dp))
             dependencies.forEachIndexed { index, dependency ->
                 DependencyDisplay(
                     dependency = dependency,
@@ -104,15 +115,6 @@ fun DependenciesPage(navController: NavController) {
                     navController
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            // add dep btn
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { isAddingNew = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Add Dependency")
             }
         }
 
@@ -134,11 +136,11 @@ fun DependenciesPage(navController: NavController) {
                     Log.d("Update Dependency Test", "Updating relationship: ${updatedDependency.relationship}")
                     selectedDependency = null
                 },
-                onDelete = {
-                    deleteDependencyFromFirestore(selectedDependency!!.documentId!!, firestore)
-                    dependencies = dependencies.filterNot { it.documentId == selectedDependency!!.documentId }
-                    selectedDependency = null
-                }
+//                onDelete = {
+//                    deleteDependencyFromFirestore(selectedDependency!!.documentId!!, firestore)
+//                    dependencies = dependencies.filterNot { it.documentId == selectedDependency!!.documentId }
+//                    selectedDependency = null
+//                }
             )
         }
 
@@ -160,29 +162,90 @@ fun DependenciesPage(navController: NavController) {
 // display dep information
 @Composable
 fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController) {
-    val messageIcon = Icons.Filled.MailOutline
+    //val messageIcon = Icons.Filled.MailOutline
+    val firestore = FirebaseFirestore.getInstance()
+    var showDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { onEdit() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp), // Added padding for spacing
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Dependency $dependencyNumber", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("Name: ${dependency.name}")
-            Text("NRIC: ${dependency.nric}")
-            Text("Relationship: ${dependency.relationship}")
-            Text("Phone: ${dependency.phone}")
-            Text("Email: ${dependency.email}")
-        }
-        IconButton(onClick = {
-            navController.navigate("messages/${dependency.dependencyId}")
-            Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
-        }) {
-            Icon(imageVector = Icons.Filled.MailOutline, contentDescription = "Send Message")
-        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Dependency Header with Icons on Right
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Dependency $dependencyNumber",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f) // Push icons to the right
+                )
 
+                IconButton(onClick = {
+                    navController.navigate("messages/${dependency.dependencyId}")
+                    Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+                }) {
+                    Icon(imageVector = Icons.Filled.MailOutline, contentDescription = "Send Message")
+                }
+
+                IconButton(onClick = {
+                    onEdit()
+                    Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+                }) {
+                    Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit Dependency")
+                }
+
+                IconButton(onClick = {
+                    showDialog = true
+                    Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+                }) {
+                    Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete Dependency")
+                }
+
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Delete Dependency") },
+                        text = { Text("Are you sure you want to delete this dependency? This action cannot be undone.") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                dependency.documentId?.let { deleteDependencyFromFirestore(it, firestore) }
+                                Log.d("Delete Dependency", "DependencyId: ${dependency.dependencyId}")
+                                showDialog = false
+                            }) {
+                                Text("Delete", color = Color.Red)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Dependency Details
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Name: ${dependency.name}")
+                Text("NRIC: ${dependency.nric}")
+                Text("Relationship: ${dependency.relationship}")
+                Text("Phone: ${dependency.phone}")
+                Text("Email: ${dependency.email}")
+            }
+        }
     }
+
 }
 
 // edit dep info
@@ -287,15 +350,15 @@ fun DependencyEditDialog(
                 Button(onClick = { onDismiss() }) {
                     Text("Cancel")
                 }
-                onDelete?.let {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = { onDelete() },
-                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Delete")
-                    }
-                }
+//                onDelete?.let {
+//                    Spacer(modifier = Modifier.width(8.dp))
+//                    Button(
+//                        onClick = { onDelete() },
+//                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
+//                    ) {
+//                        Text("Delete")
+//                    }
+//                }
             }
         },
         text = {
