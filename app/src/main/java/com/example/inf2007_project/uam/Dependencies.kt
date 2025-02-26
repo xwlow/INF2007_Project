@@ -254,7 +254,7 @@ fun DependencyEditDialog(
     dependency: DependencyData,
     onDismiss: () -> Unit,
     onSave: (DependencyData) -> Unit,
-    onDelete: (() -> Unit)? = null,
+    //onDelete: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
@@ -266,7 +266,7 @@ fun DependencyEditDialog(
     var relationship by remember { mutableStateOf(dependency.relationship) }
     var phone by remember { mutableStateOf(dependency.phone) }
     var email by remember { mutableStateOf(dependency.email) }
-    var dependencyId by remember { mutableStateOf(dependency.dependencyId) }
+    //var dependencyId by remember { mutableStateOf(dependency.dependencyId) }
     var searchedUser by remember { mutableStateOf<DependencyData?>(null) }
     var isSearching by remember { mutableStateOf(false) }
     var searchError by remember { mutableStateOf(false) }
