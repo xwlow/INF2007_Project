@@ -70,6 +70,7 @@ fun BookPage(
     val isUpdating = existingBooking != null
     // Calender
     var selectedDate by remember { mutableStateOf("") }
+    var dependencyName by remember { mutableStateOf("") }
     // Dependency
     val firestore = FirebaseFirestore.getInstance()
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
@@ -164,7 +165,14 @@ fun BookPage(
             doctorName = it.doctorName
             chosenTime = it.chosenTime
             extraInformation = it.extraInformation
+
+            dependenciesWithDetails.find {it.first.dependencyId == existingBooking.dependencyId}?.let { (dependency, userDetails) ->
+                selectedDependencyName = "${userDetails.name} (${dependency.relationship})"
+            }
+
+
         }
+        Log.d("Selected Dependency", selectedDependencyName)
         delay(300)
         showCalendar = true
     }
@@ -406,6 +414,8 @@ fun BookPage(
                         if (isUpdating) {
                             bookViewModel.updateBooking(
                                 bookingId = existingBooking!!.consultationId,
+                                //selectedDependencyName = selectedDependencyName,
+                                //dependencyName = dependencyName,
                                 selectedDate = selectedDate,
                                 doctorName = doctorName,
                                 chosenTime = chosenTime,
@@ -419,6 +429,7 @@ fun BookPage(
                                 chosenTime = chosenTime,
                                 clinicName = clinicName,
                                 extraInformation = extraInformation,
+                                //selectedDependencyName = selectedDependencyName,
                                 dependencyId = dependencyIdSelected,
                                 onSuccess = {
                                     Log.e("Firestore", "Booking saved")

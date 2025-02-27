@@ -24,6 +24,7 @@ import java.util.Locale
 data class Booking(
     val consultationId: String = "",
     val userId: String = "",
+    val selectedDependencyName: String = "",
     val selectedDate: String = "",
     val doctorName: String = "",
     val chosenTime: String = "",
