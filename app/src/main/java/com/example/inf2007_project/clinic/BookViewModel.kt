@@ -1,8 +1,14 @@
 package com.example.inf2007_project.clinic
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.inf2007_project.uam.DependencyData
+import com.example.inf2007_project.uam.UserDetailData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.components.Dependency
 import com.google.firebase.firestore.FirebaseFirestore
@@ -23,7 +29,7 @@ data class Booking(
     val chosenTime: String = "",
     val clinicName: String = "",
     val extraInformation: String = "",
-    val dependencyDocumentId: String = "",
+    val dependencyId: String = "",
 )
 
 class BookViewModel : ViewModel() {
@@ -55,73 +61,198 @@ class BookViewModel : ViewModel() {
         }
     }
 
-
-    // Function to fetch consultations
-    private fun fetchConsultations() {
+    fun fetchConsultations() {
         val user = auth.currentUser
         if (user == null) {
             Log.e("FirestoreError", "User not logged in")
             return
         }
 
-        db.collection("consultations")
+        db.collection("dependencies")
             .whereEqualTo("userId", user.uid)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.e("FirestoreError", "Query failed: ${e.message}")
-                    return@addSnapshotListener
+            .get()
+            .addOnSuccessListener { documents ->
+                val dependencyIds = documents.mapNotNull { doc ->
+                    doc.getString("dependencyId") // Get dependencyId field
                 }
 
-                if (snapshot == null || snapshot.isEmpty) {
-                    Log.w("FirestoreWarning", "No matching consultations found.")
+                Log.d("DependencyIDs", "Dependencies: $dependencyIds")
+
+                if (dependencyIds.isNotEmpty()) {
+                    // Now fetch consultations based on the retrieved dependencyIds
+                    db.collection("consultations")
+                        .whereIn("dependencyId", dependencyIds)
+                        .addSnapshotListener { snapshot, e ->
+                            if (e != null) {
+                                Log.e("FirestoreError", "Query failed: ${e.message}")
+                                return@addSnapshotListener
+                            }
+
+                            if (snapshot == null || snapshot.isEmpty) {
+                                Log.w("FirestoreWarning", "No matching consultations found.")
+                                _pastConsultations.value = emptyList()
+                                _upcomingConsultations.value = emptyList()
+                                return@addSnapshotListener
+                            }
+
+                            val now = Calendar.getInstance().time
+
+                            val allConsultations = snapshot.documents.mapNotNull { doc ->
+                                Booking(
+                                    consultationId = doc.id,
+                                    userId = doc.getString("userId") ?: "",
+                                    selectedDate = doc.getString("selectedDate") ?: "",
+                                    doctorName = doc.getString("doctorName") ?: "",
+                                    chosenTime = doc.getString("chosenTime") ?: "",
+                                    clinicName = doc.getString("clinicName") ?: "",
+                                    extraInformation = doc.getString("extraInformation") ?: "",
+                                    dependencyId = doc.getString("dependencyId") ?: "",
+                                )
+                            }
+
+                            val pastList = mutableListOf<Booking>()
+                            val upcomingList = mutableListOf<Booking>()
+
+                            allConsultations.forEach { consultation ->
+                                val consultationDateTime = convertToDateTime(consultation.selectedDate, consultation.chosenTime)
+                                if (consultationDateTime != null) {
+                                    if (consultationDateTime.before(now)) {
+                                        pastList.add(consultation)
+                                    } else {
+                                        upcomingList.add(consultation)
+                                    }
+                                }
+                            }
+
+                            val sortedPastList = pastList.sortedWith(compareBy(
+                                { convertToDateTime(it.selectedDate, it.chosenTime) },  // Sort by Date
+                                { it.chosenTime } // Then by Time
+                            ))
+
+                            val sortedUpcomingList = upcomingList.sortedWith(compareBy(
+                                { convertToDateTime(it.selectedDate, it.chosenTime) },
+                                { it.chosenTime }
+                            ))
+
+                            // Update StateFlow values
+                            _pastConsultations.value = sortedPastList
+                            _upcomingConsultations.value = sortedUpcomingList
+                        }
+                } else {
+                    Log.d("DependencyIDs", "No dependencies found, skipping consultation query")
                     _pastConsultations.value = emptyList()
                     _upcomingConsultations.value = emptyList()
-                    return@addSnapshotListener
                 }
-
-                val now = Calendar.getInstance().time
-
-                val allConsultations = snapshot.documents.mapNotNull { doc ->
-                    Booking(
-                        consultationId = doc.id,
-                        userId = doc.getString("userId") ?: "",
-                        selectedDate = doc.getString("selectedDate") ?: "",
-                        doctorName = doc.getString("doctorName") ?: "",
-                        chosenTime = doc.getString("chosenTime") ?: "",
-                        clinicName = doc.getString("clinicName") ?: "",
-                        extraInformation = doc.getString("extraInformation") ?: "",
-                    )
-                }
-
-                val pastList = mutableListOf<Booking>()
-                val upcomingList = mutableListOf<Booking>()
-
-                allConsultations.forEach { consultation ->
-                    val consultationDateTime = convertToDateTime(consultation.selectedDate, consultation.chosenTime)
-                    if (consultationDateTime != null) {
-                        if (consultationDateTime.before(now)) {
-                            pastList.add(consultation)
-                        } else {
-                            upcomingList.add(consultation)
-                        }
-                    }
-                }
-
-                val sortedPastList = pastList.sortedWith(compareBy(
-                    { convertToDateTime(it.selectedDate, it.chosenTime) },  // Sort by Date
-                    { it.chosenTime } // Then by Time
-                ))
-
-                val sortedUpcomingList = upcomingList.sortedWith(compareBy(
-                    { convertToDateTime(it.selectedDate, it.chosenTime) },
-                    { it.chosenTime }
-                ))
-
-                // Update StateFlow values
-                _pastConsultations.value = sortedPastList
-                _upcomingConsultations.value = sortedUpcomingList
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore Error", "Error getting dependencies", e)
             }
     }
+
+
+
+//    // Function to fetch consultations
+//    private fun fetchConsultations() {
+//        val user = auth.currentUser
+//        if (user == null) {
+//            Log.e("FirestoreError", "User not logged in")
+//            return
+//        }
+//
+////        val dependencyIds by remember { mutableStateOf(emptyList<Pair<DependencyData, UserDetailData>>()) }
+//        db.collection("dependencies")
+//            .whereEqualTo("userId", user.uid)
+//            .get()
+//            .addOnSuccessListener { documents ->
+//                val dependencyIds = documents.map { it.id } // Extracts all dependency document IDs
+//
+//                Log.d("DependencyIDs", "Dependencies: $dependencyIds")
+//
+//                // Ensure dependencyIds is not empty to prevent Firestore errors
+//                if (dependencyIds.isNotEmpty()) {
+//                    db.collection("consultations")
+//                        .whereIn("dependencyId", dependencyIds) // Use the retrieved list
+//                        .addSnapshotListener { snapshot, e ->
+//                            if (e != null) {
+//                                Log.e("FirestoreError", "Query failed: ${e.message}")
+//                                return@addSnapshotListener
+//                            }
+//
+//                            if (snapshot != null && !snapshot.isEmpty) {
+//                                val consultations = snapshot.documents.mapNotNull { it.toObject(Booking::class.java) }
+//                                Log.d("Consultations", "Retrieved Consultations: $consultations")
+//                            } else {
+//                                Log.d("Consultations", "No consultations found for dependencies")
+//                            }
+//                        }
+//                } else {
+//                    Log.d("DependencyIDs", "No dependencies found, skipping consultation query")
+//                }
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("Firestore Error", "Error getting dependencies", e)
+//            }
+//
+//
+//        db.collection("consultations")
+//            .whereIn("dependencyId", dependencyIds)
+//            .addSnapshotListener { snapshot, e ->
+//                if (e != null) {
+//                    Log.e("FirestoreError", "Query failed: ${e.message}")
+//                    return@addSnapshotListener
+//                }
+//
+//                if (snapshot == null || snapshot.isEmpty) {
+//                    Log.w("FirestoreWarning", "No matching consultations found.")
+//                    _pastConsultations.value = emptyList()
+//                    _upcomingConsultations.value = emptyList()
+//                    return@addSnapshotListener
+//                }
+//
+//                val now = Calendar.getInstance().time
+//
+//                val allConsultations = snapshot.documents.mapNotNull { doc ->
+//                    Booking(
+//                        consultationId = doc.id,
+//                        userId = doc.getString("userId") ?: "",
+//                        selectedDate = doc.getString("selectedDate") ?: "",
+//                        doctorName = doc.getString("doctorName") ?: "",
+//                        chosenTime = doc.getString("chosenTime") ?: "",
+//                        clinicName = doc.getString("clinicName") ?: "",
+//                        extraInformation = doc.getString("extraInformation") ?: "",
+//                        dependencyId = doc.getString("dependencyId") ?: "",
+//                    )
+//                }
+//
+//                val pastList = mutableListOf<Booking>()
+//                val upcomingList = mutableListOf<Booking>()
+//
+//                allConsultations.forEach { consultation ->
+//                    val consultationDateTime = convertToDateTime(consultation.selectedDate, consultation.chosenTime)
+//                    if (consultationDateTime != null) {
+//                        if (consultationDateTime.before(now)) {
+//                            pastList.add(consultation)
+//                        } else {
+//                            upcomingList.add(consultation)
+//                        }
+//                    }
+//                }
+//
+//                val sortedPastList = pastList.sortedWith(compareBy(
+//                    { convertToDateTime(it.selectedDate, it.chosenTime) },  // Sort by Date
+//                    { it.chosenTime } // Then by Time
+//                ))
+//
+//                val sortedUpcomingList = upcomingList.sortedWith(compareBy(
+//                    { convertToDateTime(it.selectedDate, it.chosenTime) },
+//                    { it.chosenTime }
+//                ))
+//
+//                // Update StateFlow values
+//                _pastConsultations.value = sortedPastList
+//                _upcomingConsultations.value = sortedUpcomingList
+//            }
+//    }
 
     // Function to fetch consultations
     fun fetchAvailableTimings(clinicName: String, selectedDate: String) {

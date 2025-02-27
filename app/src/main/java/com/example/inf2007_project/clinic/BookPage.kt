@@ -75,7 +75,7 @@ fun BookPage(
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
     var dependencyExpended by remember { mutableStateOf(false) }
     val dependencyIcon = if (dependencyExpended) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-    var dependencyDocumentID by remember { mutableStateOf("") }
+    var dependencyIdSelected by remember { mutableStateOf("") }
     var selectedDependencyName by remember { mutableStateOf("") }
     //var dependencies by remember { mutableStateOf(emptyList<DependencyData>()) }
     var dependenciesWithDetails by remember { mutableStateOf(emptyList<Pair<DependencyData, UserDetailData>>()) }
@@ -156,41 +156,6 @@ fun BookPage(
                 }
         }
     }
-
-//    // Ensure dependency data exists for user
-//    LaunchedEffect(userId) {
-//        // Retrieve dependency list
-//        if (userId != null) {
-//            firestore.collection("dependencies")
-//                .whereEqualTo("userId", userId)
-//                .addSnapshotListener { snapshot, e ->
-//                    if (e != null) {
-//                        Log.e("Firestore Error", "Listen failed.", e)
-//                        return@addSnapshotListener
-//                    }
-//                    if (snapshot != null) {
-//                        dependencies = snapshot.documents.mapNotNull { doc ->
-//                            doc.toObject(DependencyData::class.java)?.let { dependency ->
-//                                val documentId =
-//                                    doc.id // Firestore document ID (for updates/deletes)
-//                                val dependencyId =
-//                                    dependency.dependencyId ?: documentId // Elderly ID reference
-//
-//                                Log.d(
-//                                    "Firestore Data",
-//                                    "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
-//                                )
-//
-//                                dependency.copy(
-//                                    dependencyId = dependencyId,
-//                                    documentId = documentId
-//                                ) // Store both IDs
-//                            }
-//                        }
-//                    }
-//                }
-//        }
-//    }
 
     // Ensure state updates when existingBooking changes
     LaunchedEffect(existingBooking) {
@@ -312,7 +277,7 @@ fun BookPage(
                             DropdownMenuItem(
                                 text = { Text(text = "${userDetails.name} (${dependency.relationship})") },
                                 onClick = {
-                                    dependencyDocumentID = dependency.documentId.toString()
+                                    dependencyIdSelected = dependency.dependencyId.toString()
                                     selectedDependencyName = "${userDetails.name} (${dependency.relationship})"
                                     dependencyExpended = false
                                 }
@@ -419,7 +384,7 @@ fun BookPage(
                     onClick = {
                         showDialog = true
                     },
-                    enabled = if (doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty() and dependencyDocumentID.isNotEmpty()) true else false
+                    enabled = if (doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty()) true else false
                 ) {
                     Text(text = if (isUpdating) "Update Booking" else "Book")
                 }
@@ -454,7 +419,7 @@ fun BookPage(
                                 chosenTime = chosenTime,
                                 clinicName = clinicName,
                                 extraInformation = extraInformation,
-                                dependencyId = dependencyDocumentID,
+                                dependencyId = dependencyIdSelected,
                                 onSuccess = {
                                     Log.e("Firestore", "Booking saved")
                                 },
