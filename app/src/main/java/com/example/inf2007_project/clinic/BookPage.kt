@@ -70,16 +70,15 @@ fun BookPage(
     val isUpdating = existingBooking != null
     // Calender
     var selectedDate by remember { mutableStateOf("") }
-    var dependencyName by remember { mutableStateOf("") }
     var updatesFlag by remember { mutableStateOf(false) }
     // Dependency
+    var userRole by remember { mutableStateOf<String?>(null) }
     val firestore = FirebaseFirestore.getInstance()
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
     var dependencyExpended by remember { mutableStateOf(false) }
     val dependencyIcon = if (dependencyExpended) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     var dependencyIdSelected by remember { mutableStateOf("") }
     var selectedDependencyName by remember { mutableStateOf("") }
-    //var dependencies by remember { mutableStateOf(emptyList<DependencyData>()) }
     var dependenciesWithDetails by remember { mutableStateOf(emptyList<Pair<DependencyData, UserDetailData>>()) }
     // Doctors
     var doctorsExpanded by remember { mutableStateOf(false) }
@@ -106,9 +105,29 @@ fun BookPage(
     var showDialog by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
 
-    // Ensure dependency data exists for user
+    Log.d("userRole", userRole.toString())
+
+
     LaunchedEffect(userId) {
         if (userId != null) {
+
+            // Fetch the current user's role from the userDetail collection
+            firestore.collection("userDetail")
+                .document(userId) // Query using the current user's UID
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        userRole = document.getString("userRole") ?: "Unknown Role" // Get userRole
+                        Log.d("Firestore", "Logged-in User Role: $userRole")
+                    } else {
+                        Log.w("Firestore", "User role not found for userId: $userId")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error fetching user role", e)
+                }
+
+            // Fetch the userDetails for each dependencies tied to the userId
             firestore.collection("dependencies")
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener { snapshot, e ->
@@ -171,13 +190,11 @@ fun BookPage(
             dependenciesWithDetails.find {it.first.dependencyId == existingBooking.dependencyId}?.let { (dependency, userDetails) ->
                 selectedDependencyName = "${userDetails.name} (${dependency.relationship})"
             }
-
-
+            updatesFlag = true
         }
 
         Log.d("Selected Dependency", selectedDependencyName)
         delay(300)
-        updatesFlag = true
         showCalendar = true
     }
 
@@ -257,43 +274,48 @@ fun BookPage(
                     }
                 }
 
-                // Dropdown for Dependecy
-                Box {
-                    OutlinedTextField(
-                        value = selectedDependencyName,
-                        onValueChange = {},
-                        enabled = dependenciesWithDetails.isNotEmpty(),
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { dependencyExpended = true }
-                            .onGloballyPositioned { coordinates ->
-                                mTextFieldSize = coordinates.size.toSize()
-                            },
-                        label = { Text("Specify the dependency") },
-                        trailingIcon = {
-                            Icon(
-                                dependencyIcon,
-                                "Dropdown",
-                                Modifier.clickable(enabled = dependenciesWithDetails.isNotEmpty()) { dependencyExpended = !dependencyExpended })
-                        }
-                    )
+                if (userRole == "Caretaker") {
+                    // Dropdown for Dependecy
+                    Box {
+                        OutlinedTextField(
+                            value = selectedDependencyName,
+                            onValueChange = {},
+                            enabled = dependenciesWithDetails.isNotEmpty() and (!updatesFlag),
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !updatesFlag) { dependencyExpended = true }
+                                .onGloballyPositioned { coordinates ->
+                                    mTextFieldSize = coordinates.size.toSize()
+                                },
+                            label = { Text("Specify the dependency") },
+                            trailingIcon = {
+                                Icon(
+                                    dependencyIcon,
+                                    "Dropdown",
+                                    Modifier.clickable(enabled = dependenciesWithDetails.isNotEmpty() and (!updatesFlag)) {
+                                        dependencyExpended = !dependencyExpended
+                                    })
+                            }
+                        )
 
-                    DropdownMenu(
-                        expanded = dependencyExpended,
-                        onDismissRequest = { dependencyExpended = false },
-                        modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
-                    ) {
-                        // Change the list
-                        dependenciesWithDetails.forEach { (dependency, userDetails) ->
-                            DropdownMenuItem(
-                                text = { Text(text = "${userDetails.name} (${dependency.relationship})") },
-                                onClick = {
-                                    dependencyIdSelected = dependency.dependencyId.toString()
-                                    selectedDependencyName = "${userDetails.name} (${dependency.relationship})"
-                                    dependencyExpended = false
-                                }
-                            )
+                        DropdownMenu(
+                            expanded = dependencyExpended,
+                            onDismissRequest = { dependencyExpended = false },
+                            modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+                        ) {
+                            // Change the list
+                            dependenciesWithDetails.forEach { (dependency, userDetails) ->
+                                DropdownMenuItem(
+                                    text = { Text(text = "${userDetails.name} (${dependency.relationship})") },
+                                    onClick = {
+                                        dependencyIdSelected = dependency.dependencyId.toString()
+                                        selectedDependencyName =
+                                            "${userDetails.name} (${dependency.relationship})"
+                                        dependencyExpended = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -427,21 +449,24 @@ fun BookPage(
                                 extraInformation = extraInformation
                             )
                         } else {
-                            bookViewModel.saveBooking(
-                                selectedDate = selectedDate,
-                                doctorName = doctorName,
-                                chosenTime = chosenTime,
-                                clinicName = clinicName,
-                                extraInformation = extraInformation,
-                                //selectedDependencyName = selectedDependencyName,
-                                dependencyId = dependencyIdSelected,
-                                onSuccess = {
-                                    Log.e("Firestore", "Booking saved")
-                                },
-                                onFailure = { exception ->
-                                    Log.e("Firestore", "Failed to save booking", exception)
-                                }
-                            )
+                            (if (dependencyIdSelected.isEmpty()) userId else dependencyIdSelected)?.let {
+                                bookViewModel.saveBooking(
+                                    selectedDate = selectedDate,
+                                    doctorName = doctorName,
+                                    chosenTime = chosenTime,
+                                    clinicName = clinicName,
+                                    extraInformation = extraInformation,
+                                    //selectedDependencyName = selectedDependencyName,
+                                    //dependencyId = dependencyIdSelected,
+                                    dependencyId = it,
+                                    onSuccess = {
+                                        Log.e("Firestore", "Booking saved")
+                                    },
+                                    onFailure = { exception ->
+                                        Log.e("Firestore", "Failed to save booking", exception)
+                                    }
+                                )
+                            }
                         }
                     }
                 ) {
