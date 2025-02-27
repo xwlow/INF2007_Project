@@ -555,3 +555,14 @@ data class DependencyData(
     var phone: String = "",
     var email: String = ""
 )
+
+// Added here first, for me to retrieve the details within userDetail collection
+data class UserDetailData(
+    var DoB: String = "",
+    var email: String = "",
+    var name: String = "",
+    var nric: String = "",
+    var phone: String = "",
+    var uid: String = "",
+    var userRole: String = "",
+)

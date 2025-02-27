@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.components.Dependency
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ data class Booking(
     val chosenTime: String = "",
     val clinicName: String = "",
     val extraInformation: String = "",
+    val dependencyDocumentId: String = "",
 )
 
 class BookViewModel : ViewModel() {
@@ -37,10 +39,6 @@ class BookViewModel : ViewModel() {
 
     private val _availableSlots = MutableStateFlow<List<String>>(emptyList()) // Store available slots
     val availableSlots: StateFlow<List<String>> = _availableSlots
-
-//    init {
-//        fetchConsultations() // Fetch consultations when ViewModel initializes
-//    }
 
     init {
         // Observe FirebaseAuth user changes
@@ -165,6 +163,7 @@ class BookViewModel : ViewModel() {
         chosenTime: String,
         clinicName: String,
         extraInformation: String,
+        dependencyId: String,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
@@ -184,6 +183,7 @@ class BookViewModel : ViewModel() {
                     "chosenTime" to chosenTime,
                     "clinicName" to clinicName,
                     "extraInformation" to extraInformation,
+                    "dependencyId" to dependencyId
                 )
 
                 FirebaseFirestore.getInstance()

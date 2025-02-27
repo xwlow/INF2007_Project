@@ -48,7 +48,10 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.inf2007_project.pages.BottomNavigationBar
+import com.example.inf2007_project.uam.DependencyData
+import com.example.inf2007_project.uam.UserDetailData
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -67,6 +70,15 @@ fun BookPage(
     val isUpdating = existingBooking != null
     // Calender
     var selectedDate by remember { mutableStateOf("") }
+    // Dependency
+    val firestore = FirebaseFirestore.getInstance()
+    val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
+    var dependencyExpended by remember { mutableStateOf(false) }
+    val dependencyIcon = if (dependencyExpended) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+    var dependencyDocumentID by remember { mutableStateOf("") }
+    var selectedDependencyName by remember { mutableStateOf("") }
+    //var dependencies by remember { mutableStateOf(emptyList<DependencyData>()) }
+    var dependenciesWithDetails by remember { mutableStateOf(emptyList<Pair<DependencyData, UserDetailData>>()) }
     // Doctors
     var doctorsExpanded by remember { mutableStateOf(false) }
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -91,6 +103,95 @@ fun BookPage(
     // Modal
     var showDialog by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
+
+    // Ensure dependency data exists for user
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            firestore.collection("dependencies")
+                .whereEqualTo("userId", userId)
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.e("Firestore Error", "Listen failed.", e)
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot != null) {
+                        val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
+                            doc.toObject(DependencyData::class.java)?.let { dependency ->
+                                val documentId = doc.id
+                                val dependencyId = dependency.dependencyId ?: documentId
+
+                                Log.d(
+                                    "Firestore Data",
+                                    "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
+                                )
+
+                                dependency.copy(
+                                    dependencyId = dependencyId,
+                                    documentId = documentId
+                                )
+                            }
+                        }
+
+                        // Fetch user details for each dependencyId
+                        fetchedDependencies.forEach { dependency ->
+                            dependency.dependencyId?.let {
+                                firestore.collection("userDetail")
+                                    .document(it) // Use dependencyId to fetch user details
+                                    .get()
+                                    .addOnSuccessListener { userDoc ->
+                                        val userDetails = userDoc.toObject(UserDetailData::class.java)
+
+                                        if (userDetails != null) {
+                                            // Store both dependency and user details
+                                            dependenciesWithDetails = dependenciesWithDetails + Pair(dependency, userDetails)
+                                        }
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        Log.e("Firestore Error", "Failed to fetch user details", exception)
+                                    }
+                            }
+                        }
+                    }
+                }
+        }
+    }
+
+//    // Ensure dependency data exists for user
+//    LaunchedEffect(userId) {
+//        // Retrieve dependency list
+//        if (userId != null) {
+//            firestore.collection("dependencies")
+//                .whereEqualTo("userId", userId)
+//                .addSnapshotListener { snapshot, e ->
+//                    if (e != null) {
+//                        Log.e("Firestore Error", "Listen failed.", e)
+//                        return@addSnapshotListener
+//                    }
+//                    if (snapshot != null) {
+//                        dependencies = snapshot.documents.mapNotNull { doc ->
+//                            doc.toObject(DependencyData::class.java)?.let { dependency ->
+//                                val documentId =
+//                                    doc.id // Firestore document ID (for updates/deletes)
+//                                val dependencyId =
+//                                    dependency.dependencyId ?: documentId // Elderly ID reference
+//
+//                                Log.d(
+//                                    "Firestore Data",
+//                                    "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
+//                                )
+//
+//                                dependency.copy(
+//                                    dependencyId = dependencyId,
+//                                    documentId = documentId
+//                                ) // Store both IDs
+//                            }
+//                        }
+//                    }
+//                }
+//        }
+//    }
+
     // Ensure state updates when existingBooking changes
     LaunchedEffect(existingBooking) {
         existingBooking?.let {
@@ -145,28 +246,76 @@ fun BookPage(
                     ) {
                         Text(text = "Selected Date: $selectedDate")
                         if (showCalendar) {
-                            AndroidView(
-                                factory = { context ->
-                                    CalendarView(context).apply {
-                                        val today = System.currentTimeMillis()
-                                        val oneDayInMillis = 24 * 60 * 60 * 1000
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                            ) {
+                                AndroidView(
+                                    factory = { context ->
+                                        CalendarView(context).apply {
+                                            val today = System.currentTimeMillis()
+                                            val oneDayInMillis = 24 * 60 * 60 * 1000
 
-                                        if (selectedDate.isNotEmpty()) {
-                                            val parsedDate = parseDateToMillis(selectedDate)
-                                            date = parsedDate
-                                        } else {
-                                            date = today
+                                            if (selectedDate.isNotEmpty()) {
+                                                val parsedDate = parseDateToMillis(selectedDate)
+                                                date = parsedDate
+                                            } else {
+                                                date = today
+                                            }
+
+                                            minDate = today + oneDayInMillis
+
+                                            setBackgroundColor(android.graphics.Color.WHITE)
+                                            setOnDateChangeListener { _, year, month, dayOfMonth ->
+                                                val formattedDate = "$dayOfMonth/${month + 1}/$year"
+                                                selectedDate = formattedDate
+                                            }
                                         }
+                                    },
+                                    modifier = Modifier.padding(top = 16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
 
-                                        minDate = today + oneDayInMillis
+                // Dropdown for Dependecy
+                Box {
+                    OutlinedTextField(
+                        value = selectedDependencyName,
+                        onValueChange = {},
+                        enabled = dependenciesWithDetails.isNotEmpty(),
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { dependencyExpended = true }
+                            .onGloballyPositioned { coordinates ->
+                                mTextFieldSize = coordinates.size.toSize()
+                            },
+                        label = { Text("Specify the dependency") },
+                        trailingIcon = {
+                            Icon(
+                                dependencyIcon,
+                                "Dropdown",
+                                Modifier.clickable(enabled = dependenciesWithDetails.isNotEmpty()) { dependencyExpended = !dependencyExpended })
+                        }
+                    )
 
-                                        setOnDateChangeListener { _, year, month, dayOfMonth ->
-                                            val formattedDate = "$dayOfMonth/${month + 1}/$year"
-                                            selectedDate = formattedDate
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.padding(top = 16.dp)
+                    DropdownMenu(
+                        expanded = dependencyExpended,
+                        onDismissRequest = { dependencyExpended = false },
+                        modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+                    ) {
+                        // Change the list
+                        dependenciesWithDetails.forEach { (dependency, userDetails) ->
+                            DropdownMenuItem(
+                                text = { Text(text = "${userDetails.name} (${dependency.relationship})") },
+                                onClick = {
+                                    dependencyDocumentID = dependency.documentId.toString()
+                                    selectedDependencyName = "${userDetails.name} (${dependency.relationship})"
+                                    dependencyExpended = false
+                                }
                             )
                         }
                     }
@@ -270,7 +419,7 @@ fun BookPage(
                     onClick = {
                         showDialog = true
                     },
-                    enabled = if (doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty()) true else false
+                    enabled = if (doctorName.isNotEmpty() and selectedDate.isNotEmpty() and chosenTime.isNotEmpty() and dependencyDocumentID.isNotEmpty()) true else false
                 ) {
                     Text(text = if (isUpdating) "Update Booking" else "Book")
                 }
@@ -305,6 +454,7 @@ fun BookPage(
                                 chosenTime = chosenTime,
                                 clinicName = clinicName,
                                 extraInformation = extraInformation,
+                                dependencyId = dependencyDocumentID,
                                 onSuccess = {
                                     Log.e("Firestore", "Booking saved")
                                 },
