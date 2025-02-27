@@ -71,6 +71,7 @@ fun BookPage(
     // Calender
     var selectedDate by remember { mutableStateOf("") }
     var dependencyName by remember { mutableStateOf("") }
+    var updatesFlag by remember { mutableStateOf(false) }
     // Dependency
     val firestore = FirebaseFirestore.getInstance()
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
@@ -158,6 +159,7 @@ fun BookPage(
         }
     }
 
+
     // Ensure state updates when existingBooking changes
     LaunchedEffect(existingBooking) {
         existingBooking?.let {
@@ -172,8 +174,10 @@ fun BookPage(
 
 
         }
+
         Log.d("Selected Dependency", selectedDependencyName)
         delay(300)
+        updatesFlag = true
         showCalendar = true
     }
 
