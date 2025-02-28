@@ -48,6 +48,9 @@ class BookViewModel : ViewModel() {
     private val _availableSlots = MutableStateFlow<List<String>>(emptyList()) // Store available slots
     val availableSlots: StateFlow<List<String>> = _availableSlots
 
+    private val _userNames = MutableStateFlow<Map<String, String>>(emptyMap())
+    val userNames: StateFlow<Map<String, String>> = _userNames
+
     init {
         // Observe FirebaseAuth user changes
         auth.addAuthStateListener { firebaseAuth ->
@@ -323,6 +326,32 @@ class BookViewModel : ViewModel() {
                 Log.e("FirestoreError", "Failed to fetch booking: $e")
             }
         }
+    }
+
+    // Fetch names for consultations
+    fun fetchUserNamesForConsultations() {
+        val allDependencyIds = (pastConsultations.value + upcomingConsultations.value)
+            .map { it.dependencyId }
+            .filter { it.isNotEmpty() }
+            .toSet() // Ensure uniqueness
+
+
+        if (allDependencyIds.isEmpty()) return
+
+        db.collection("userDetail")
+            .whereIn("uid", allDependencyIds.toList())
+            .get()
+            .addOnSuccessListener { documents ->
+                val userMap = documents.associate { doc ->
+                    val userId = doc.getString("uid") ?: ""
+                    val name = doc.getString("name") ?: "Unknown"
+                    userId to name
+                }
+                _userNames.value = userMap
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreError", "Error fetching user details", e)
+            }
     }
 
 }

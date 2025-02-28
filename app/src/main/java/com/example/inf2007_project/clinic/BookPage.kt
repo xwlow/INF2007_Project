@@ -210,7 +210,7 @@ fun BookPage(
         }
 
         Log.d("Selected Dependency", selectedDependencyName)
-        delay(300)
+        delay(400)
         showCalendar = true
     }
 

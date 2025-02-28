@@ -49,12 +49,15 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
     // Collect state from ViewModel
     val pastConsultations by bookViewModel.pastConsultations.collectAsState()
     val upcomingConsultations by bookViewModel.upcomingConsultations.collectAsState()
+    val userNames by bookViewModel.userNames.collectAsState()
+    //Log.d("dependencyName", userNames.toString())
 
     var selectedTabIndex by remember { mutableStateOf(1) }
     val tabs = listOf("Past", "Upcoming")
 
     LaunchedEffect(Unit) {
         bookViewModel.fetchConsultations()
+        bookViewModel.fetchUserNamesForConsultations()
     }
 
     Scaffold(
@@ -105,7 +108,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                                     consultation = pastConsultations[index],
                                     bookViewModel,
                                     navController,
-                                    upcoming = false
+                                    upcoming = false,
+                                    userNames
                                 )
                             }
                         }
@@ -137,7 +141,8 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                                     consultation = upcomingConsultations[index],
                                     bookViewModel,
                                     navController,
-                                    upcoming = true
+                                    upcoming = true,
+                                    userNames
                                 )
                             }
                         }
@@ -149,9 +154,10 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
 }
 
 @Composable
-fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navController: NavController, upcoming: Boolean) {
+fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navController: NavController, upcoming: Boolean, userNames: Map<String, String>) {
     // Modal
     var showDialog by remember { mutableStateOf(false) }
+    val dependencyName = userNames[consultation.dependencyId] ?: "Loading..."
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -181,6 +187,7 @@ fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navCon
             ) {
                 Text(consultation.clinicName)
                 Text(consultation.selectedDate + " @ " + consultation.chosenTime)
+                Text(dependencyName)
 
                 if (upcoming) {
                 Row {
