@@ -38,7 +38,7 @@ import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DependenciesPage(navController: NavController) {
+fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel) {
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
@@ -46,30 +46,80 @@ fun DependenciesPage(navController: NavController) {
     var dependencies by remember { mutableStateOf(emptyList<DependencyData>()) }
     var selectedDependency by remember { mutableStateOf<DependencyData?>(null) }
     var isAddingNew by remember { mutableStateOf(false) }
-
+    var userType by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(userId) {
+
+
         if (userId != null) {
-            firestore.collection("dependencies")
-                .whereEqualTo("userId", userId)
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.e("Firestore Error", "Listen failed.", e)
-                        return@addSnapshotListener
-                    }
-                    if (snapshot != null) {
-                        dependencies = snapshot.documents.mapNotNull { doc ->
-                            doc.toObject(DependencyData::class.java)?.let { dependency ->
-                                val documentId = doc.id // Firestore document ID (for updates/deletes)
-                                val dependencyId = dependency.dependencyId ?: documentId // Elderly ID reference
 
-                                Log.d("Firestore Data", "Retrieved Dependency: ${dependency.name}, Doc ID: $documentId, Dependency ID: $dependencyId")
+            authViewModel.fetchUserType(userId) {
+                    fetchedUserType ->
+                userType = fetchedUserType
 
-                                dependency.copy(dependencyId = dependencyId, documentId = documentId) // Store both IDs
+
+            if(fetchedUserType == "Caregiver") {
+                firestore.collection("dependencies")
+                    .whereEqualTo("caregiverId", userId)
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null) {
+                            Log.e("Firestore Error", "Listen failed.", e)
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null) {
+                            dependencies = snapshot.documents.mapNotNull { doc ->
+                                doc.toObject(DependencyData::class.java)?.let { dependency ->
+                                    val documentId =
+                                        doc.id // Firestore document ID (for updates/deletes)
+                                    val dependencyId = dependency.dependencyId
+                                        ?: documentId // Elderly ID reference
+
+                                    Log.d(
+                                        "Firestore Data",
+                                        "Retrieved Dependency: ${dependency.name}, Doc ID: $documentId, Dependency ID: $dependencyId"
+                                    )
+
+                                    dependency.copy(
+                                        dependencyId = dependencyId,
+                                        documentId = documentId
+                                    ) // Store both IDs
+                                }
                             }
                         }
                     }
-                }
+
+            }
+            else if(fetchedUserType == "User") {
+                firestore.collection("dependencies")
+                    .whereEqualTo("dependencyId", userId)
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null) {
+                            Log.e("Firestore Error", "Listen failed.", e)
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null) {
+                            dependencies = snapshot.documents.mapNotNull { doc ->
+                                doc.toObject(DependencyData::class.java)?.let { dependency ->
+                                    val documentId =
+                                        doc.id // Firestore document ID (for updates/deletes)
+                                    val caregiverId = dependency.caregiverId
+                                        ?: documentId // Elderly ID reference
+
+                                    Log.d(
+                                        "Firestore Data",
+                                        "Retrieved Dependency: ${dependency.name}, Doc ID: $documentId, Dependency ID: $caregiverId"
+                                    )
+
+                                    dependency.copy(
+                                        caregiverId = caregiverId,
+                                        documentId = documentId
+                                    ) // Store both IDs
+                                }
+                            }
+                        }
+                    }
+            }
+            }
         }
     }
 
@@ -99,20 +149,23 @@ fun DependenciesPage(navController: NavController) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
-            Button(
-                onClick = { isAddingNew = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Add Dependency")
+            if(userType == "Caregiver") {
+                Button(
+                    onClick = { isAddingNew = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add Dependency")
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
-            Spacer(modifier = Modifier.height(24.dp))
             dependencies.forEachIndexed { index, dependency ->
                 DependencyDisplay(
                     dependency = dependency,
                     // auto increment for dep
                     dependencyNumber = index + 1,
                     onEdit = { selectedDependency = dependency },
-                    navController
+                    navController,
+                    userType = userType
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -161,7 +214,7 @@ fun DependenciesPage(navController: NavController) {
 
 // display dep information
 @Composable
-fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController) {
+fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController, userType: String?) {
     //val messageIcon = Icons.Filled.MailOutline
     val firestore = FirebaseFirestore.getInstance()
     var showDialog by remember { mutableStateOf(false) }
@@ -182,31 +235,58 @@ fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit:
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Dependency $dependencyNumber",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f) // Push icons to the right
-                )
-
-                IconButton(onClick = {
-                    navController.navigate("messages/${dependency.dependencyId}")
-                    Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
-                }) {
-                    Icon(imageVector = Icons.Filled.MailOutline, contentDescription = "Send Message")
+                if(userType == "Caregiver") {
+                    Text(
+                        text = "Dependency $dependencyNumber",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f) // Push icons to the right
+                    )
+                } else {
+                    Text(
+                        text = "Caregiver $dependencyNumber",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f) // Push icons to the right
+                    )
                 }
 
+                // Single message IconButton with conditional navigation
                 IconButton(onClick = {
-                    onEdit()
-                    Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+                    if (userType == "Caregiver") {
+                        // If logged in as caregiver, navigate using dependency's ID (elderly person)
+                        navController.navigate("messages/${dependency.dependencyId}")
+                        Log.d("Recipient Message", "Navigating to chat with dependency: ${dependency.dependencyId}")
+                    } else {
+                        // If logged in as user (elderly), navigate using caregiver's ID
+                        navController.navigate("messages/${dependency.caregiverId}")
+                        Log.d("Recipient Message", "Navigating to chat with caregiver: ${dependency.caregiverId}")
+                    }
                 }) {
-                    Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit Dependency")
+                    Icon(
+                        imageVector = Icons.Filled.MailOutline,
+                        contentDescription = "Send Message"
+                    )
                 }
 
-                IconButton(onClick = {
-                    showDialog = true
-                    Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
-                }) {
-                    Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete Dependency")
+                if(userType == "Caregiver") {
+                    IconButton(onClick = {
+                        onEdit()
+                        Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "Edit Dependency"
+                        )
+                    }
+
+                    IconButton(onClick = {
+                        showDialog = true
+                        Log.d("Recipient Message", "DependencyId: ${dependency.dependencyId}")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Delete Dependency"
+                        )
+                    }
                 }
 
                 if (showDialog) {
@@ -481,7 +561,7 @@ fun addDependencyToFirestore(
     val dependencyMap = hashMapOf(
         "dependencyId" to dependency.dependencyId,
         "name" to dependency.name,
-        "userId" to userId,
+        "caregiverId" to userId,
         "email" to dependency.email,
         "nric" to dependency.nric,
         "phone" to dependency.phone,
@@ -489,7 +569,7 @@ fun addDependencyToFirestore(
         )
 
     firestore.collection("dependencies")
-        .whereEqualTo("userId", userId)
+        .whereEqualTo("caregiverId", userId)
         .whereEqualTo("dependencyId", dependency.dependencyId)
         .get()
         .addOnSuccessListener { result ->
@@ -548,7 +628,7 @@ fun updateDependencyRelationship(documentId: String, newRelationship: String, fi
 data class DependencyData(
     var documentId: String? = null,
     var dependencyId: String? = null, //dependency id --> elderly id
-    var userId: String? = null, //caretaker id --> current userid
+    var caregiverId: String? = null, //caregiver id --> current userid
     var name: String = "",
     var nric: String = "",
     var relationship: String = "",

@@ -61,9 +61,9 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         composable("notes&reminders"){
             NotesRemindersPage(modifier, navController, authViewModel, testViewModel)
         }
-        composable("messages/{dependencyId}"){ backStackEntry ->
-            val dependencyId = backStackEntry.arguments?.getString("dependencyId") ?: ""
-            Messaging(modifier, navController, dependencyId)
+        composable("messages/{recipientId}"){ backStackEntry ->
+            val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
+            Messaging(modifier, navController, recipientId)
         }
 
         composable("queue/{clinicInfo}") { backStackEntry ->
@@ -159,7 +159,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         composable("dependencies"){
-            DependenciesPage(navController = navController)
+            DependenciesPage(navController, authViewModel)
         }
 
         composable("chatbot"){

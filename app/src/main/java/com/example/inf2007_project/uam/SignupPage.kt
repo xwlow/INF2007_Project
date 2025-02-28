@@ -42,7 +42,7 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
     var DoB by remember { mutableStateOf("") }
     var mExpanded by remember { mutableStateOf(false) }
 
-    val userRoles = listOf("User", "Caretaker")
+    val userRoles = listOf("User", "Caregiver")
     val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     val buttonEnable =
         email.isNotEmpty() && password.isNotEmpty() && cfmPassword.isNotEmpty() && name.isNotEmpty() && nric.isNotEmpty()

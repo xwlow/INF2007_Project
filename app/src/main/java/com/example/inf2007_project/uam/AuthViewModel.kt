@@ -1,5 +1,6 @@
 package com.example.inf2007_project.uam
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LiveData
@@ -106,6 +107,22 @@ class AuthViewModel : ViewModel(){
         auth.signOut()
         _authState.value = AuthState.Unauthenticated
     }
+
+    fun fetchUserType(userId: String, onResult: (String) -> Unit) {
+        FirebaseFirestore.getInstance().collection("userDetail")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val userType = document.getString("userRole") ?: "user" // Default to "user"
+                    onResult(userType)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("Firestore", "Failed to fetch userType", it)
+            }
+    }
+
 
 }
 
