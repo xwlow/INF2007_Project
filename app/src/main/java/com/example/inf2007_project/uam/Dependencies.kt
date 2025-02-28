@@ -58,6 +58,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel)
                 userType = fetchedUserType
 
 
+            if(fetchedUserType == "Caregiver") {
                 firestore.collection("dependencies")
                     .whereEqualTo("caregiverId", userId)
                     .addSnapshotListener { snapshot, e ->
@@ -88,6 +89,37 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel)
                     }
 
             }
+            else if(fetchedUserType == "User") {
+                firestore.collection("dependencies")
+                    .whereEqualTo("dependencyId", userId)
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null) {
+                            Log.e("Firestore Error", "Listen failed.", e)
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null) {
+                            dependencies = snapshot.documents.mapNotNull { doc ->
+                                doc.toObject(DependencyData::class.java)?.let { dependency ->
+                                    val documentId =
+                                        doc.id // Firestore document ID (for updates/deletes)
+                                    val caregiverId = dependency.caregiverId
+                                        ?: documentId // Elderly ID reference
+
+                                    Log.d(
+                                        "Firestore Data",
+                                        "Retrieved Dependency: ${dependency.name}, Doc ID: $documentId, Dependency ID: $caregiverId"
+                                    )
+
+                                    dependency.copy(
+                                        caregiverId = caregiverId,
+                                        documentId = documentId
+                                    ) // Store both IDs
+                                }
+                            }
+                        }
+                    }
+            }
+            }
         }
     }
 
@@ -117,14 +149,15 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
-
-            Button(
-                onClick = { isAddingNew = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Add Dependency")
+            if(userType == "Caregiver") {
+                Button(
+                    onClick = { isAddingNew = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add Dependency")
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
-            Spacer(modifier = Modifier.height(24.dp))
             dependencies.forEachIndexed { index, dependency ->
                 DependencyDisplay(
                     dependency = dependency,

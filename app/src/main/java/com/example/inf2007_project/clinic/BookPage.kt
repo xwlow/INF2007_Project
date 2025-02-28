@@ -129,7 +129,7 @@ fun BookPage(
 
             // Fetch the userDetails for each dependencies tied to the userId
             firestore.collection("dependencies")
-                .whereEqualTo("caretakerId", userId)
+                .whereEqualTo("userId", userId)
                 .addSnapshotListener { snapshot, e ->
                     if (e != null) {
                         Log.e("Firestore Error", "Listen failed.", e)
@@ -274,7 +274,7 @@ fun BookPage(
                     }
                 }
 
-                if (userRole == "Caregiver") {
+                if (userRole == "Caretaker") {
                     // Dropdown for Dependecy
                     Box {
                         OutlinedTextField(
