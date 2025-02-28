@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -23,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -44,6 +47,7 @@ fun ProfilePage(
     val authState = authViewModel.authState.observeAsState()
     val currentUser = FirebaseAuth.getInstance().currentUser
     val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
 
     //for observing firestore user details
     val userDetails by profileViewModel.userDetails.observeAsState()
@@ -234,14 +238,37 @@ fun ProfilePage(
 
                     //for deleting account button
                     Button(
-                        onClick = {
-                            profileViewModel.deleteProfile(authViewModel)
-                            Toast.makeText(context, "User deleted!", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        onClick = { showDialog = true }, // Show dialog before deleting
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red) // Optional: Red color for warning
                     ) {
-                        Text("Delete")
+                        Text("Delete", color = Color.White)
                     }
+                }
+
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("Confirm Deletion") },
+                        text = { Text("Are you sure you want to delete your account? This action cannot be undone.") },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    profileViewModel.deleteProfile(authViewModel)
+                                    Toast.makeText(context, "User deleted!", Toast.LENGTH_SHORT).show()
+                                    showDialog = false
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                            ) {
+                                Text("Delete", color = Color.White)
+                            }
+                        },
+                        dismissButton = {
+                            Button(onClick = { showDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
             }
         }
