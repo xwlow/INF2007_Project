@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.inf2007_project.pages.BottomNavigationBar
+import com.example.inf2007_project.uam.AuthViewModel
 import com.example.inf2007_project.uam.DependencyData
 import com.example.inf2007_project.uam.UserDetailData
 import com.google.firebase.auth.FirebaseAuth
@@ -64,6 +65,7 @@ fun BookPage(
     modifier: Modifier = Modifier,
     navController: NavController,
     bookViewModel: BookViewModel,
+    authViewModel: AuthViewModel,
     existingBooking: Booking? = null
 ) {
     // Updates
@@ -72,7 +74,7 @@ fun BookPage(
     var selectedDate by remember { mutableStateOf("") }
     var updatesFlag by remember { mutableStateOf(false) }
     // Dependency
-    var userRole by remember { mutableStateOf<String?>(null) }
+    var userType by remember { mutableStateOf<String?>(null) }
     val firestore = FirebaseFirestore.getInstance()
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
     var dependencyExpended by remember { mutableStateOf(false) }
@@ -105,76 +107,88 @@ fun BookPage(
     var showDialog by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
 
-    Log.d("userRole", userRole.toString())
+    userType?.let { Log.d("userRole", it) }
 
 
     LaunchedEffect(userId) {
         if (userId != null) {
 
-            // Fetch the current user's role from the userDetail collection
-            firestore.collection("userDetail")
-                .document(userId) // Query using the current user's UID
-                .get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        userRole = document.getString("userRole") ?: "Unknown Role" // Get userRole
-                        Log.d("Firestore", "Logged-in User Role: $userRole")
-                    } else {
-                        Log.w("Firestore", "User role not found for userId: $userId")
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Error fetching user role", e)
-                }
+//            // Fetch the current user's role from the userDetail collection
+//            firestore.collection("userDetail")
+//                .document(userId) // Query using the current user's UID
+//                .get()
+//                .addOnSuccessListener { document ->
+//                    if (document.exists()) {
+//                        userRole = document.getString("userRole") ?: "Unknown Role" // Get userRole
+//                        Log.d("Firestore", "Logged-in User Role: $userRole")
+//                    } else {
+//                        Log.w("Firestore", "User role not found for userId: $userId")
+//                    }
+//                }
+//                .addOnFailureListener { e ->
+//                    Log.e("Firestore", "Error fetching user role", e)
+//                }
+            authViewModel.fetchUserType(userId) { fetchedUserType ->
+                userType = fetchedUserType
 
-            // Fetch the userDetails for each dependencies tied to the userId
-            firestore.collection("dependencies")
-                .whereEqualTo("userId", userId)
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.e("Firestore Error", "Listen failed.", e)
-                        return@addSnapshotListener
-                    }
-
-                    if (snapshot != null) {
-                        val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
-                            doc.toObject(DependencyData::class.java)?.let { dependency ->
-                                val documentId = doc.id
-                                val dependencyId = dependency.dependencyId ?: documentId
-
-                                Log.d(
-                                    "Firestore Data",
-                                    "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
-                                )
-
-                                dependency.copy(
-                                    dependencyId = dependencyId,
-                                    documentId = documentId
-                                )
-                            }
+                // Fetch the userDetails for each dependencies tied to the userId
+                firestore.collection("dependencies")
+                    .whereEqualTo("userId", userId)
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null) {
+                            Log.e("Firestore Error", "Listen failed.", e)
+                            return@addSnapshotListener
                         }
 
-                        // Fetch user details for each dependencyId
-                        fetchedDependencies.forEach { dependency ->
-                            dependency.dependencyId?.let {
-                                firestore.collection("userDetail")
-                                    .document(it) // Use dependencyId to fetch user details
-                                    .get()
-                                    .addOnSuccessListener { userDoc ->
-                                        val userDetails = userDoc.toObject(UserDetailData::class.java)
+                        if (snapshot != null) {
+                            val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
+                                doc.toObject(DependencyData::class.java)?.let { dependency ->
+                                    val documentId = doc.id
+                                    val dependencyId = dependency.dependencyId ?: documentId
 
-                                        if (userDetails != null) {
-                                            // Store both dependency and user details
-                                            dependenciesWithDetails = dependenciesWithDetails + Pair(dependency, userDetails)
+                                    Log.d(
+                                        "Firestore Data",
+                                        "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
+                                    )
+
+                                    dependency.copy(
+                                        dependencyId = dependencyId,
+                                        documentId = documentId
+                                    )
+                                }
+                            }
+
+                            // Fetch user details for each dependencyId
+                            fetchedDependencies.forEach { dependency ->
+                                dependency.dependencyId?.let {
+                                    firestore.collection("userDetail")
+                                        .document(it) // Use dependencyId to fetch user details
+                                        .get()
+                                        .addOnSuccessListener { userDoc ->
+                                            val userDetails =
+                                                userDoc.toObject(UserDetailData::class.java)
+
+                                            if (userDetails != null) {
+                                                // Store both dependency and user details
+                                                dependenciesWithDetails =
+                                                    dependenciesWithDetails + Pair(
+                                                        dependency,
+                                                        userDetails
+                                                    )
+                                            }
                                         }
-                                    }
-                                    .addOnFailureListener { exception ->
-                                        Log.e("Firestore Error", "Failed to fetch user details", exception)
-                                    }
+                                        .addOnFailureListener { exception ->
+                                            Log.e(
+                                                "Firestore Error",
+                                                "Failed to fetch user details",
+                                                exception
+                                            )
+                                        }
+                                }
                             }
                         }
                     }
-                }
+            }
         }
     }
 
@@ -274,7 +288,7 @@ fun BookPage(
                     }
                 }
 
-                if (userRole == "Caretaker") {
+                if (userType == "Caregiver") {
                     // Dropdown for Dependecy
                     Box {
                         OutlinedTextField(
