@@ -212,10 +212,10 @@ fun ProfilePage(
                     Button(
                         onClick = {
                             // Save profile changes
-                            profileViewModel.updateProfile(name, email, phone, DoB, nric)
+                            profileViewModel.updateProfile(name, email, phone, DoB, nric, authViewModel, context)
                             //updateFirebaseAuthProfile(name, phone)
                             profileViewModel.saveUserInfo()
-                            Toast.makeText(context, "Profile updated!", Toast.LENGTH_SHORT).show()
+                            //Toast.makeText(context, "Profile updated!", Toast.LENGTH_SHORT).show()
 
                         },
                         modifier = Modifier.fillMaxWidth()
