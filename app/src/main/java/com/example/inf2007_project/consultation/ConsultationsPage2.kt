@@ -53,6 +53,10 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
     var selectedTabIndex by remember { mutableStateOf(1) }
     val tabs = listOf("Past", "Upcoming")
 
+    LaunchedEffect(Unit) {
+        bookViewModel.fetchConsultations()
+    }
+
     Scaffold(
         bottomBar = {
             BottomNavigationBar(navController)
