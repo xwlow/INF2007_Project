@@ -70,24 +70,30 @@ class BookViewModel : ViewModel() {
             return
         }
 
+        // fetch list of dependencies
         db.collection("dependencies")
-            .whereEqualTo("userId", user.uid)
+            .whereEqualTo("caregiverId", user.uid)
             .get()
             .addOnSuccessListener { documents ->
                 val dependencyIds = documents.mapNotNull { doc ->
                     doc.getString("dependencyId") // Get dependencyId field
-                }
+                }.toMutableList()
 
                 Log.d("DependencyIDs", "Dependencies: $dependencyIds")
 
-                if (dependencyIds.isNotEmpty()) {
-                    // Fetch consultations for dependencies
-                    fetchConsultationsForDependencyIds(dependencyIds)
-                } else {
-                    Log.d("DependencyIDs", "No dependencies found, fetching consultations for user")
-                    // Fetch consultations where dependencyId = userId
-                    fetchConsultationsForUser(user.uid)
-                }
+                // Always include the user's own ID in the list
+                dependencyIds.add(user.uid)
+                fetchConsultationsForDependencyIds(dependencyIds)
+
+//                if (dependencyIds.isNotEmpty()) {
+//                    // Fetch consultations for dependencies
+//                    fetchConsultationsForDependencyIds(dependencyIds)
+//                }
+//                else {
+//                    Log.d("DependencyIDs", "No dependencies found, fetching consultations for user")
+//                    // Fetch consultations where dependencyId = userId
+//                    fetchConsultationsForUser(user.uid)
+//                }
             }
             .addOnFailureListener { e ->
                 Log.e("Firestore Error", "Error getting dependencies", e)
