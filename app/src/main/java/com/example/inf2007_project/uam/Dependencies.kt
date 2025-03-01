@@ -527,11 +527,11 @@ fun addDependencyToFirestore(
     // Convert DependencyData to a Map without "documentId"
     val dependencyMap = hashMapOf(
         "dependencyId" to dependency.dependencyId,
-        "name" to dependency.name,
+        //"name" to dependency.name,
         "caregiverId" to userId,
-        "email" to dependency.email,
-        "nric" to dependency.nric,
-        "phone" to dependency.phone,
+        //"email" to dependency.email,
+        //"nric" to dependency.nric,
+        //"phone" to dependency.phone,
         "relationship" to dependency.relationship
         )
 
