@@ -51,6 +51,9 @@ class BookViewModel : ViewModel() {
     private val _userNames = MutableStateFlow<Map<String, String>>(emptyMap())
     val userNames: StateFlow<Map<String, String>> = _userNames
 
+    private val _dependenciesWithDetails = MutableStateFlow<List<Pair<DependencyData, UserDetailData>>>(emptyList())
+    val dependenciesWithDetails: StateFlow<List<Pair<DependencyData, UserDetailData>>> = _dependenciesWithDetails
+
     init {
         // Observe FirebaseAuth user changes
         auth.addAuthStateListener { firebaseAuth ->
@@ -106,14 +109,6 @@ class BookViewModel : ViewModel() {
     private fun fetchConsultationsForDependencyIds(dependencyIds: List<String>) {
         db.collection("consultations")
             .whereIn("dependencyId", dependencyIds)
-            .addSnapshotListener { snapshot, e ->
-                processConsultationResults(snapshot, e)
-            }
-    }
-
-    private fun fetchConsultationsForUser(userId: String) {
-        db.collection("consultations")
-            .whereEqualTo("dependencyId", userId) // Fetch user's own bookings
             .addSnapshotListener { snapshot, e ->
                 processConsultationResults(snapshot, e)
             }
@@ -351,6 +346,45 @@ class BookViewModel : ViewModel() {
             }
             .addOnFailureListener { e ->
                 Log.e("FirestoreError", "Error fetching user details", e)
+            }
+    }
+
+    fun fetchDependenciesWithDetails(userId: String, userType: String) {
+        db.collection("dependencies")
+            .whereEqualTo("caregiverId", userId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("Firestore Error", "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(DependencyData::class.java)?.copy(
+                            dependencyId = doc.getString("dependencyId") ?: doc.id,
+                            documentId = doc.id
+                        )
+                    }
+
+                    val updatedList = mutableListOf<Pair<DependencyData, UserDetailData>>()
+
+                    fetchedDependencies.forEach { dependency ->
+                        db.collection("userDetail")
+                            .document(dependency.dependencyId!!)
+                            .get()
+                            .addOnSuccessListener { userDoc ->
+                                val userDetails = userDoc.toObject(UserDetailData::class.java)
+
+                                if (userDetails != null) {
+                                    updatedList.add(dependency to userDetails)
+                                    _dependenciesWithDetails.value = updatedList.toList()
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore Error", "Failed to fetch user details", e)
+                            }
+                    }
+                }
             }
     }
 

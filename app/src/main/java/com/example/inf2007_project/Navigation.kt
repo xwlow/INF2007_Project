@@ -162,7 +162,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         composable("dependencies"){
-            DependenciesPage(navController, authViewModel)
+            DependenciesPage(navController, authViewModel, bookViewModel)
         }
 
         composable("chatbot"){

@@ -86,7 +86,7 @@ fun BookPage(
     val dependencyIcon = if (dependencyExpended) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     var dependencyIdSelected by remember { mutableStateOf("") }
     var selectedDependencyName by remember { mutableStateOf("") }
-    var dependenciesWithDetails by remember { mutableStateOf(emptyList<Pair<DependencyData, UserDetailData>>()) }
+    val dependenciesWithDetails by bookViewModel.dependenciesWithDetails.collectAsState()
     // Doctors
     var doctorsExpanded by remember { mutableStateOf(false) }
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -120,64 +120,7 @@ fun BookPage(
         if (userId != null) {
             authViewModel.fetchUserType(userId) { fetchedUserType ->
                 userType = fetchedUserType
-
-                // Fetch the userDetails for each dependencies tied to the userId
-                firestore.collection("dependencies")
-                    .whereEqualTo("caregiverId", userId)
-                    .addSnapshotListener { snapshot, e ->
-                        if (e != null) {
-                            Log.e("Firestore Error", "Listen failed.", e)
-                            return@addSnapshotListener
-                        }
-
-                        if (snapshot != null) {
-                            val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
-                                doc.toObject(DependencyData::class.java)?.let { dependency ->
-                                    val documentId = doc.id
-                                    val dependencyId = dependency.dependencyId ?: documentId
-
-                                    Log.d(
-                                        "Firestore Data",
-                                        "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
-                                    )
-
-                                    dependency.copy(
-                                        dependencyId = dependencyId,
-                                        documentId = documentId
-                                    )
-                                }
-                            }
-
-                            // Fetch user details for each dependencyId
-                            fetchedDependencies.forEach { dependency ->
-                                dependency.dependencyId?.let {
-                                    firestore.collection("userDetail")
-                                        .document(it) // Use dependencyId to fetch user details
-                                        .get()
-                                        .addOnSuccessListener { userDoc ->
-                                            val userDetails =
-                                                userDoc.toObject(UserDetailData::class.java)
-
-                                            if (userDetails != null) {
-                                                // Store both dependency and user details
-                                                dependenciesWithDetails =
-                                                    dependenciesWithDetails + Pair(
-                                                        dependency,
-                                                        userDetails
-                                                    )
-                                            }
-                                        }
-                                        .addOnFailureListener { exception ->
-                                            Log.e(
-                                                "Firestore Error",
-                                                "Failed to fetch user details",
-                                                exception
-                                            )
-                                        }
-                                }
-                            }
-                        }
-                    }
+                bookViewModel.fetchDependenciesWithDetails(userId, userType!!)
             }
         }
     }
@@ -578,5 +521,6 @@ fun generateConsultationSlots(startHour: Int, endHour: Int, intervalMinutes: Int
 
     return slots
 }
+
 
 
