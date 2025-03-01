@@ -187,7 +187,7 @@ fun ConsultationItem(consultation: Booking, bookViewModel: BookViewModel, navCon
             ) {
                 Text(consultation.clinicName)
                 Text(consultation.selectedDate + " @ " + consultation.chosenTime)
-                Text(dependencyName)
+                Text("Consultation for $dependencyName")
 
                 if (upcoming) {
                 Row {
