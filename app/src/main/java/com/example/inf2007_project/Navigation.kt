@@ -1,6 +1,7 @@
 package com.example.inf2007_project
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -115,6 +116,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
                 if (consultationId != null) {
                     bookViewModel.getConsultation(consultationId) { booking ->
                         existingBooking = booking // Store the retrieved booking
+                        Log.d("Bookings", existingBooking.toString())
                     }
                 }
             }
@@ -124,6 +126,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
                 modifier = Modifier,
                 navController = navController,
                 bookViewModel = bookViewModel,
+                authViewModel = authViewModel,
                 existingBooking = existingBooking
             )
         }
@@ -159,7 +162,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         composable("dependencies"){
-            DependenciesPage(navController, authViewModel)
+            DependenciesPage(navController, authViewModel, bookViewModel)
         }
 
         composable("chatbot"){

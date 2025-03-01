@@ -48,6 +48,12 @@ class BookViewModel : ViewModel() {
     private val _availableSlots = MutableStateFlow<List<String>>(emptyList()) // Store available slots
     val availableSlots: StateFlow<List<String>> = _availableSlots
 
+    private val _userNames = MutableStateFlow<Map<String, String>>(emptyMap())
+    val userNames: StateFlow<Map<String, String>> = _userNames
+
+    private val _dependenciesWithDetails = MutableStateFlow<List<Pair<DependencyData, UserDetailData>>>(emptyList())
+    val dependenciesWithDetails: StateFlow<List<Pair<DependencyData, UserDetailData>>> = _dependenciesWithDetails
+
     init {
         // Observe FirebaseAuth user changes
         auth.addAuthStateListener { firebaseAuth ->
@@ -70,24 +76,30 @@ class BookViewModel : ViewModel() {
             return
         }
 
+        // fetch list of dependencies
         db.collection("dependencies")
-            .whereEqualTo("userId", user.uid)
+            .whereEqualTo("caregiverId", user.uid)
             .get()
             .addOnSuccessListener { documents ->
                 val dependencyIds = documents.mapNotNull { doc ->
                     doc.getString("dependencyId") // Get dependencyId field
-                }
+                }.toMutableList()
 
                 Log.d("DependencyIDs", "Dependencies: $dependencyIds")
 
-                if (dependencyIds.isNotEmpty()) {
-                    // Fetch consultations for dependencies
-                    fetchConsultationsForDependencyIds(dependencyIds)
-                } else {
-                    Log.d("DependencyIDs", "No dependencies found, fetching consultations for user")
-                    // Fetch consultations where dependencyId = userId
-                    fetchConsultationsForUser(user.uid)
-                }
+                // Always include the user's own ID in the list
+                dependencyIds.add(user.uid)
+                fetchConsultationsForDependencyIds(dependencyIds)
+
+//                if (dependencyIds.isNotEmpty()) {
+//                    // Fetch consultations for dependencies
+//                    fetchConsultationsForDependencyIds(dependencyIds)
+//                }
+//                else {
+//                    Log.d("DependencyIDs", "No dependencies found, fetching consultations for user")
+//                    // Fetch consultations where dependencyId = userId
+//                    fetchConsultationsForUser(user.uid)
+//                }
             }
             .addOnFailureListener { e ->
                 Log.e("Firestore Error", "Error getting dependencies", e)
@@ -97,14 +109,6 @@ class BookViewModel : ViewModel() {
     private fun fetchConsultationsForDependencyIds(dependencyIds: List<String>) {
         db.collection("consultations")
             .whereIn("dependencyId", dependencyIds)
-            .addSnapshotListener { snapshot, e ->
-                processConsultationResults(snapshot, e)
-            }
-    }
-
-    private fun fetchConsultationsForUser(userId: String) {
-        db.collection("consultations")
-            .whereEqualTo("dependencyId", userId) // Fetch user's own bookings
             .addSnapshotListener { snapshot, e ->
                 processConsultationResults(snapshot, e)
             }
@@ -317,6 +321,71 @@ class BookViewModel : ViewModel() {
                 Log.e("FirestoreError", "Failed to fetch booking: $e")
             }
         }
+    }
+
+    // Fetch names for consultations
+    fun fetchUserNamesForConsultations() {
+        val allDependencyIds = (pastConsultations.value + upcomingConsultations.value)
+            .map { it.dependencyId }
+            .filter { it.isNotEmpty() }
+            .toSet() // Ensure uniqueness
+
+
+        if (allDependencyIds.isEmpty()) return
+
+        db.collection("userDetail")
+            .whereIn("uid", allDependencyIds.toList())
+            .get()
+            .addOnSuccessListener { documents ->
+                val userMap = documents.associate { doc ->
+                    val userId = doc.getString("uid") ?: ""
+                    val name = doc.getString("name") ?: "Unknown"
+                    userId to name
+                }
+                _userNames.value = userMap
+            }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreError", "Error fetching user details", e)
+            }
+    }
+
+    fun fetchDependenciesWithDetails(userId: String, userType: String) {
+        db.collection("dependencies")
+            .whereEqualTo("caregiverId", userId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("Firestore Error", "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(DependencyData::class.java)?.copy(
+                            dependencyId = doc.getString("dependencyId") ?: doc.id,
+                            documentId = doc.id
+                        )
+                    }
+
+                    val updatedList = mutableListOf<Pair<DependencyData, UserDetailData>>()
+
+                    fetchedDependencies.forEach { dependency ->
+                        db.collection("userDetail")
+                            .document(dependency.dependencyId!!)
+                            .get()
+                            .addOnSuccessListener { userDoc ->
+                                val userDetails = userDoc.toObject(UserDetailData::class.java)
+
+                                if (userDetails != null) {
+                                    updatedList.add(dependency to userDetails)
+                                    _dependenciesWithDetails.value = updatedList.toList()
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("Firestore Error", "Failed to fetch user details", e)
+                            }
+                    }
+                }
+            }
     }
 
 }

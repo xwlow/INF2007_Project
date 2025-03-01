@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,7 +27,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -48,6 +51,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.inf2007_project.pages.BottomNavigationBar
+import com.example.inf2007_project.uam.AuthViewModel
 import com.example.inf2007_project.uam.DependencyData
 import com.example.inf2007_project.uam.UserDetailData
 import com.google.firebase.auth.FirebaseAuth
@@ -64,6 +68,7 @@ fun BookPage(
     modifier: Modifier = Modifier,
     navController: NavController,
     bookViewModel: BookViewModel,
+    authViewModel: AuthViewModel,
     existingBooking: Booking? = null
 ) {
     // Updates
@@ -71,15 +76,17 @@ fun BookPage(
     // Calender
     var selectedDate by remember { mutableStateOf("") }
     var updatesFlag by remember { mutableStateOf(false) }
+    // Caregiver
+    var selectedOptionCaregiver by remember { mutableStateOf("No") }
     // Dependency
-    var userRole by remember { mutableStateOf<String?>(null) }
+    var userType by remember { mutableStateOf<String?>(null) }
     val firestore = FirebaseFirestore.getInstance()
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
     var dependencyExpended by remember { mutableStateOf(false) }
     val dependencyIcon = if (dependencyExpended) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     var dependencyIdSelected by remember { mutableStateOf("") }
     var selectedDependencyName by remember { mutableStateOf("") }
-    var dependenciesWithDetails by remember { mutableStateOf(emptyList<Pair<DependencyData, UserDetailData>>()) }
+    val dependenciesWithDetails by bookViewModel.dependenciesWithDetails.collectAsState()
     // Doctors
     var doctorsExpanded by remember { mutableStateOf(false) }
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -105,96 +112,48 @@ fun BookPage(
     var showDialog by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
 
-    Log.d("userRole", userRole.toString())
+    userType?.let { Log.d("userRole", it) }
 
 
     LaunchedEffect(userId) {
+        Log.d("poop", userId.toString())
         if (userId != null) {
-
-            // Fetch the current user's role from the userDetail collection
-            firestore.collection("userDetail")
-                .document(userId) // Query using the current user's UID
-                .get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        userRole = document.getString("userRole") ?: "Unknown Role" // Get userRole
-                        Log.d("Firestore", "Logged-in User Role: $userRole")
-                    } else {
-                        Log.w("Firestore", "User role not found for userId: $userId")
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Error fetching user role", e)
-                }
-
-            // Fetch the userDetails for each dependencies tied to the userId
-            firestore.collection("dependencies")
-                .whereEqualTo("userId", userId)
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.e("Firestore Error", "Listen failed.", e)
-                        return@addSnapshotListener
-                    }
-
-                    if (snapshot != null) {
-                        val fetchedDependencies = snapshot.documents.mapNotNull { doc ->
-                            doc.toObject(DependencyData::class.java)?.let { dependency ->
-                                val documentId = doc.id
-                                val dependencyId = dependency.dependencyId ?: documentId
-
-                                Log.d(
-                                    "Firestore Data",
-                                    "Retrieved Dependency: ${dependency.dependencyId}, Doc ID: $documentId, Dependency ID: $dependencyId"
-                                )
-
-                                dependency.copy(
-                                    dependencyId = dependencyId,
-                                    documentId = documentId
-                                )
-                            }
-                        }
-
-                        // Fetch user details for each dependencyId
-                        fetchedDependencies.forEach { dependency ->
-                            dependency.dependencyId?.let {
-                                firestore.collection("userDetail")
-                                    .document(it) // Use dependencyId to fetch user details
-                                    .get()
-                                    .addOnSuccessListener { userDoc ->
-                                        val userDetails = userDoc.toObject(UserDetailData::class.java)
-
-                                        if (userDetails != null) {
-                                            // Store both dependency and user details
-                                            dependenciesWithDetails = dependenciesWithDetails + Pair(dependency, userDetails)
-                                        }
-                                    }
-                                    .addOnFailureListener { exception ->
-                                        Log.e("Firestore Error", "Failed to fetch user details", exception)
-                                    }
-                            }
-                        }
-                    }
-                }
+            authViewModel.fetchUserType(userId) { fetchedUserType ->
+                userType = fetchedUserType
+                bookViewModel.fetchDependenciesWithDetails(userId, userType!!)
+            }
         }
     }
 
+    Log.d("dependenciesWithDetails", dependenciesWithDetails.toString())
+
 
     // Ensure state updates when existingBooking changes
-    LaunchedEffect(existingBooking) {
-        existingBooking?.let {
-            selectedDate = it.selectedDate
-            doctorName = it.doctorName
-            chosenTime = it.chosenTime
-            extraInformation = it.extraInformation
+    LaunchedEffect(existingBooking, dependenciesWithDetails) {
+        if (existingBooking != null && dependenciesWithDetails.isNotEmpty()) {
+            selectedDate = existingBooking.selectedDate
+            doctorName = existingBooking.doctorName
+            chosenTime = existingBooking.chosenTime
+            extraInformation = existingBooking.extraInformation
+
+            Log.d("Debug", "Existing Booking Dependency ID: ${existingBooking.dependencyId}")
+            Log.d("Debug", "List of dependencies with details: ${dependenciesWithDetails}")
 
             dependenciesWithDetails.find {it.first.dependencyId == existingBooking.dependencyId}?.let { (dependency, userDetails) ->
+                Log.d("Debug", "Enters")
                 selectedDependencyName = "${userDetails.name} (${dependency.relationship})"
+                Log.d("Debug", "selected Dependency Name: ${selectedDependencyName}")
+
+                if (selectedDependencyName.isNotEmpty())
+                {
+                    selectedOptionCaregiver = "Yes"
+                }
             }
             updatesFlag = true
         }
 
         Log.d("Selected Dependency", selectedDependencyName)
-        delay(300)
+        delay(400)
         showCalendar = true
     }
 
@@ -274,47 +233,76 @@ fun BookPage(
                     }
                 }
 
-                if (userRole == "Caretaker") {
-                    // Dropdown for Dependecy
-                    Box {
-                        OutlinedTextField(
-                            value = selectedDependencyName,
-                            onValueChange = {},
-                            enabled = dependenciesWithDetails.isNotEmpty() and (!updatesFlag),
-                            readOnly = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = !updatesFlag) { dependencyExpended = true }
-                                .onGloballyPositioned { coordinates ->
-                                    mTextFieldSize = coordinates.size.toSize()
-                                },
-                            label = { Text("Specify the dependency") },
-                            trailingIcon = {
-                                Icon(
-                                    dependencyIcon,
-                                    "Dropdown",
-                                    Modifier.clickable(enabled = dependenciesWithDetails.isNotEmpty() and (!updatesFlag)) {
-                                        dependencyExpended = !dependencyExpended
-                                    })
-                            }
-                        )
+                if (userType == "Caregiver") {
+                    // Radio for caregiver bookings
+                    Column {
+                        Text("Booking for dependency?", style = MaterialTheme.typography.titleMedium)
 
-                        DropdownMenu(
-                            expanded = dependencyExpended,
-                            onDismissRequest = { dependencyExpended = false },
-                            modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp), // Adds spacing between options
+                            modifier = Modifier.fillMaxWidth().padding(8.dp)
                         ) {
-                            // Change the list
-                            dependenciesWithDetails.forEach { (dependency, userDetails) ->
-                                DropdownMenuItem(
-                                    text = { Text(text = "${userDetails.name} (${dependency.relationship})") },
-                                    onClick = {
-                                        dependencyIdSelected = dependency.dependencyId.toString()
-                                        selectedDependencyName =
-                                            "${userDetails.name} (${dependency.relationship})"
-                                        dependencyExpended = false
-                                    }
-                                )
+                            listOf("Yes", "No").forEach { option ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable(enabled = !isUpdating) { selectedOptionCaregiver = option }
+                                ) {
+                                    RadioButton(
+                                        selected = (option == selectedOptionCaregiver),
+                                        onClick = { selectedOptionCaregiver = option },
+                                        enabled = !isUpdating
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(text = option)
+                                }
+                            }
+                        }
+                    }
+
+                    if (selectedOptionCaregiver == "Yes") {
+                        // Dropdown for Dependecy
+                        Box {
+                            OutlinedTextField(
+                                value = selectedDependencyName,
+                                onValueChange = {},
+                                enabled = dependenciesWithDetails.isNotEmpty() and (!updatesFlag),
+                                readOnly = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !updatesFlag) { dependencyExpended = true }
+                                    .onGloballyPositioned { coordinates ->
+                                        mTextFieldSize = coordinates.size.toSize()
+                                    },
+                                label = { Text("Specify the dependency") },
+                                trailingIcon = {
+                                    Icon(
+                                        dependencyIcon,
+                                        "Dropdown",
+                                        Modifier.clickable(enabled = dependenciesWithDetails.isNotEmpty() and (!updatesFlag)) {
+                                            dependencyExpended = !dependencyExpended
+                                        })
+                                }
+                            )
+
+                            DropdownMenu(
+                                expanded = dependencyExpended,
+                                onDismissRequest = { dependencyExpended = false },
+                                modifier = Modifier.width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+                            ) {
+                                // Change the list
+                                dependenciesWithDetails.forEach { (dependency, userDetails) ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = "${userDetails.name} (${dependency.relationship})") },
+                                        onClick = {
+                                            dependencyIdSelected =
+                                                dependency.dependencyId.toString()
+                                            selectedDependencyName =
+                                                "${userDetails.name} (${dependency.relationship})"
+                                            dependencyExpended = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -533,5 +521,6 @@ fun generateConsultationSlots(startHour: Int, endHour: Int, intervalMinutes: Int
 
     return slots
 }
+
 
 

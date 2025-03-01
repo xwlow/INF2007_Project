@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavController
+import com.example.inf2007_project.clinic.BookViewModel
 import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -38,7 +39,7 @@ import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel) {
+fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel, bookViewModel: BookViewModel) {
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     val userId = remember { FirebaseAuth.getInstance().currentUser?.uid }
@@ -47,48 +48,15 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel)
     var selectedDependency by remember { mutableStateOf<DependencyData?>(null) }
     var isAddingNew by remember { mutableStateOf(false) }
     var userType by remember { mutableStateOf<String?>(null) }
+    val dependenciesWithDetails by bookViewModel.dependenciesWithDetails.collectAsState()
 
     LaunchedEffect(userId) {
-
-
         if (userId != null) {
-
             authViewModel.fetchUserType(userId) { fetchedUserType ->
                 userType = fetchedUserType
-
-
-                firestore.collection("dependencies")
-                    .whereEqualTo("caregiverId", userId)
-                    .addSnapshotListener { snapshot, e ->
-                        if (e != null) {
-                            Log.e("Firestore Error", "Listen failed.", e)
-                            return@addSnapshotListener
-                        }
-                        if (snapshot != null) {
-                            dependencies = snapshot.documents.mapNotNull { doc ->
-                                doc.toObject(DependencyData::class.java)?.let { dependency ->
-                                    val documentId =
-                                        doc.id // Firestore document ID (for updates/deletes)
-                                    val dependencyId = dependency.dependencyId
-                                        ?: documentId // Elderly ID reference
-
-                                    Log.d(
-                                        "Firestore Data",
-                                        "Retrieved Dependency: ${dependency.name}, Doc ID: $documentId, Dependency ID: $dependencyId"
-                                    )
-
-                                    dependency.copy(
-                                        dependencyId = dependencyId,
-                                        documentId = documentId
-                                    ) // Store both IDs
-                                }
-                            }
-                        }
-                    }
-
+                bookViewModel.fetchDependenciesWithDetails(userId, userType!!)
             }
         }
-
     }
 
 
@@ -125,16 +93,17 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel)
                     Text("Add Dependency")
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-            dependencies.forEachIndexed { index, dependency ->
+
+            dependenciesWithDetails.forEachIndexed { index, (dependency, userDetails) ->
                 DependencyDisplay(
                     dependency = dependency,
+                    userDetails = userDetails,
                     // auto increment for dep
                     dependencyNumber = index + 1,
                     onEdit = { selectedDependency = dependency },
                     navController,
                     userType = userType
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
         }
 
@@ -181,7 +150,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel)
 
 // display dep information
 @Composable
-fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController, userType: String?) {
+fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController, userType: String?) {
     //val messageIcon = Icons.Filled.MailOutline
     val firestore = FirebaseFirestore.getInstance()
     var showDialog by remember { mutableStateOf(false) }
@@ -284,11 +253,11 @@ fun DependencyDisplay(dependency: DependencyData, dependencyNumber: Int, onEdit:
 
             // Dependency Details
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("Name: ${dependency.name}")
-                Text("NRIC: ${dependency.nric}")
+                Text("Name: ${userDetails.name}")
+                Text("NRIC: ${userDetails.nric}")
                 Text("Relationship: ${dependency.relationship}")
-                Text("Phone: ${dependency.phone}")
-                Text("Email: ${dependency.email}")
+                Text("Phone: ${userDetails.phone}")
+                Text("Email: ${userDetails.email}")
             }
         }
     }
@@ -527,11 +496,11 @@ fun addDependencyToFirestore(
     // Convert DependencyData to a Map without "documentId"
     val dependencyMap = hashMapOf(
         "dependencyId" to dependency.dependencyId,
-        "name" to dependency.name,
+        //"name" to dependency.name,
         "caregiverId" to userId,
-        "email" to dependency.email,
-        "nric" to dependency.nric,
-        "phone" to dependency.phone,
+        //"email" to dependency.email,
+        //"nric" to dependency.nric,
+        //"phone" to dependency.phone,
         "relationship" to dependency.relationship
         )
 
