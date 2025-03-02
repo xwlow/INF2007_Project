@@ -344,7 +344,7 @@ fun DependencyEditDialog(
 //                            Toast.LENGTH_SHORT
 //                        ).show()
                     }
-                    else  if (!nric.matches(nricRegex)) {
+                    else if (!nric.matches(nricRegex)) {
                         nricCheck = true
 
                     }

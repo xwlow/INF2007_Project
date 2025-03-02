@@ -42,10 +42,13 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
     var DoB by remember { mutableStateOf("") }
     var mExpanded by remember { mutableStateOf(false) }
 
+    var nricCheck by remember { mutableStateOf(false) }
+    val nricRegex = Regex("^[A-Za-z]\\d{7}[A-Za-z]$")
+
     val userRoles = listOf("User", "Caregiver")
     val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     val buttonEnable =
-        email.isNotEmpty() && password.isNotEmpty() && cfmPassword.isNotEmpty() && name.isNotEmpty() && nric.isNotEmpty()
+        email.isNotEmpty() && password.isNotEmpty() && cfmPassword.isNotEmpty() && name.isNotEmpty() && nric.isNotEmpty() && !nricCheck && userRole.isNotEmpty()
 
     val db = FirebaseFirestore.getInstance()
     val authState = authViewModel.authState.observeAsState()
@@ -123,12 +126,20 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
 
             OutlinedTextField(
                 value = nric,
-                onValueChange = { nric = it },
+                onValueChange = { if (it.length <= 9) {
+                    nric = it
+                    nricCheck = it.isNotEmpty() && !it.matches(nricRegex) }
+                                else{
+                    Toast.makeText(context, "NRIC cannot be more than 9 characters", Toast.LENGTH_SHORT).show()
+                                }}
+                ,
                 label = { Text(text = "NRIC") },
-                singleLine = true
+                singleLine = true,
+                isError = nricCheck,
+                supportingText = {if(nricCheck) Text("Invalid NRIC, Please ensure format is correct")}
+
             )
             Spacer(modifier = Modifier.height(8.dp))
-
 
             OutlinedTextField(
                 value = contact,
@@ -257,7 +268,12 @@ fun SignupPage(modifier: Modifier = Modifier, navController: NavController, auth
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-                        } else {
+                        }
+                        else if (!nric.matches(nricRegex)) {
+                            nricCheck = true
+                            Toast.makeText(context, "Invalid NRIC, Please ensure format is correct", Toast.LENGTH_SHORT).show()
+                        }
+                        else {
                             Log.d("Auth", "Failed to create user")
                             Toast.makeText(
                                 context,
