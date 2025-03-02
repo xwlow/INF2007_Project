@@ -291,6 +291,7 @@ fun DependencyEditDialog(
     var searched by remember { mutableStateOf(false) }
     var isEmpty by remember { mutableStateOf(false) }
     var dependencySelfCheck by remember { mutableStateOf(false) }
+    var nricCheck by remember { mutableStateOf(false) }
 
     var user = FirebaseAuth.getInstance().currentUser
 
@@ -311,10 +312,21 @@ fun DependencyEditDialog(
 
 
     fun searchUser() {
+
+        val nricRegex = Regex("^[A-Za-z]\\d{7}[A-Za-z]$")
+
+        if (!nric.matches(nricRegex)) {
+            nricCheck = true
+            return
+        }
+
         isSearching = true
         searchError = false
         searched = true
         dependencySelfCheck = false
+        nricCheck = false
+
+
 
         // First check if the entered NRIC matches the current user's NRIC
         firestore.collection("userDetail")
@@ -384,7 +396,6 @@ fun DependencyEditDialog(
             }
     }
 
-    // Helper function to avoid code duplication
 
 
     AlertDialog(
@@ -447,15 +458,17 @@ fun DependencyEditDialog(
                             searchedUser = null
                             searchError = false
                             dependencySelfCheck = false
+                            nricCheck = false
                         }
                     } else {
                         Toast.makeText(context, "NRIC cannot be more than 9 characters", Toast.LENGTH_SHORT).show()
                     }},
                     label = { Text("NRIC") },
-                    isError = searchError || isEmpty || dependencySelfCheck,
+                    isError = searchError || isEmpty || dependencySelfCheck || nricCheck,
                     supportingText = { if (searchError) Text("No user found with this NRIC")
                                      else if(isEmpty) Text("NRIC Field is Empty")
                                      else if(dependencySelfCheck) Text("Cannot add yourself as a dependency")
+                                     else if(nricCheck) Text("Invalid NRIC, Please ensure format is correct")
                                      },
                     readOnly = dependency.dependencyId != null // Make it read-only if updating
                 )
