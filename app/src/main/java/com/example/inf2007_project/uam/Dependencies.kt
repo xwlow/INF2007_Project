@@ -290,6 +290,9 @@ fun DependencyEditDialog(
     var mExpanded by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(false) }
     var isEmpty by remember { mutableStateOf(false) }
+    var dependencySelfCheck by remember { mutableStateOf(false) }
+
+    var user = FirebaseAuth.getInstance().currentUser
 
     val relationshipType = listOf("Child", "Cousin", "Friend")
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -300,7 +303,7 @@ fun DependencyEditDialog(
 
     val isSaveEnabled by remember(initialRelationship, relationship) {
         derivedStateOf {
-            relationship.isNotBlank() && relationship != initialRelationship
+            relationship.isNotBlank() && relationship != initialRelationship && !searchError && !isEmpty && !dependencySelfCheck
         }
     }
 
@@ -311,24 +314,78 @@ fun DependencyEditDialog(
         isSearching = true
         searchError = false
         searched = true
+        dependencySelfCheck = false
+
+        // First check if the entered NRIC matches the current user's NRIC
         firestore.collection("userDetail")
-            .whereEqualTo("nric", nric)
+            .whereEqualTo("uid", user?.uid)
             .get()
-            .addOnSuccessListener { documents ->
-                isSearching = false
-                if (!documents.isEmpty) {
-                    val doc = documents.documents.first()
-                    searchedUser = doc.toObject(DependencyData::class.java)?.copy(dependencyId = doc.id)
+            .addOnSuccessListener { currentUserDocuments ->
+                if (!currentUserDocuments.isEmpty) {
+                    val currentUserDoc = currentUserDocuments.documents.first()
+                    val currentUserNric = currentUserDoc.getString("nric") ?: ""
+
+                    // If the entered NRIC matches the current user's NRIC
+                    if (nric == currentUserNric) {
+                        isSearching = false
+                        //searchError = true
+                        searchedUser = null
+                        dependencySelfCheck = true
+//                        Toast.makeText(
+//                            context,
+//                            "You cannot add yourself as a dependency!",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+                    } else {
+                        // Proceed with the regular search
+                        firestore.collection("userDetail")
+                            .whereEqualTo("nric", nric)
+                            .get()
+                            .addOnSuccessListener { documents ->
+                                isSearching = false
+                                if (!documents.isEmpty) {
+                                    val doc = documents.documents.first()
+                                    searchedUser = doc.toObject(DependencyData::class.java)
+                                        ?.copy(dependencyId = doc.id)
+                                } else {
+                                    searchError = true
+                                    searchedUser = null
+                                }
+                            }
+                            .addOnFailureListener {
+                                isSearching = false
+                                searchError = true
+                            }
+                    }
                 } else {
-                    searchError = true
-                    searchedUser = null
+                    // If there's an issue retrieving the current user, proceed with regular search
+                    firestore.collection("userDetail")
+                        .whereEqualTo("nric", nric)
+                        .get()
+                        .addOnSuccessListener { documents ->
+                            isSearching = false
+                            if (!documents.isEmpty) {
+                                val doc = documents.documents.first()
+                                searchedUser = doc.toObject(DependencyData::class.java)
+                                    ?.copy(dependencyId = doc.id)
+
+
+                            } else {
+                                searchError = true
+                                searchedUser = null
+                            }
+                        }
+                        .addOnFailureListener {
+                            isSearching = false
+                            searchError = true
+                        }
                 }
-            }
-            .addOnFailureListener {
-                isSearching = false
-                searchError = true
+
             }
     }
+
+    // Helper function to avoid code duplication
+
 
     AlertDialog(
 
@@ -384,13 +441,22 @@ fun DependencyEditDialog(
                     value = nric,
                     onValueChange = { if (it.length <= 9) {
                         nric = it
+
+                        if (searched) {
+                            searched = false
+                            searchedUser = null
+                            searchError = false
+                            dependencySelfCheck = false
+                        }
                     } else {
                         Toast.makeText(context, "NRIC cannot be more than 9 characters", Toast.LENGTH_SHORT).show()
                     }},
                     label = { Text("NRIC") },
-                    isError = searchError || isEmpty,
+                    isError = searchError || isEmpty || dependencySelfCheck,
                     supportingText = { if (searchError) Text("No user found with this NRIC")
-                                     else if(isEmpty) Text("NRIC Field is Empty")},
+                                     else if(isEmpty) Text("NRIC Field is Empty")
+                                     else if(dependencySelfCheck) Text("Cannot add yourself as a dependency")
+                                     },
                     readOnly = dependency.dependencyId != null // Make it read-only if updating
                 )
 
