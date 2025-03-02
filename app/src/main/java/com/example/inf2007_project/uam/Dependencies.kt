@@ -293,6 +293,8 @@ fun DependencyEditDialog(
     var dependencySelfCheck by remember { mutableStateOf(false) }
     var nricCheck by remember { mutableStateOf(false) }
 
+
+    val nricRegex = Regex("^[A-Za-z]\\d{7}[A-Za-z]$")
     var user = FirebaseAuth.getInstance().currentUser
 
     val relationshipType = listOf("Child", "Cousin", "Friend")
@@ -312,13 +314,6 @@ fun DependencyEditDialog(
 
 
     fun searchUser() {
-
-        val nricRegex = Regex("^[A-Za-z]\\d{7}[A-Za-z]$")
-
-        if (!nric.matches(nricRegex)) {
-            nricCheck = true
-            return
-        }
 
         isSearching = true
         searchError = false
@@ -348,7 +343,12 @@ fun DependencyEditDialog(
 //                            "You cannot add yourself as a dependency!",
 //                            Toast.LENGTH_SHORT
 //                        ).show()
-                    } else {
+                    }
+                    else  if (!nric.matches(nricRegex)) {
+                        nricCheck = true
+
+                    }
+                    else {
                         // Proceed with the regular search
                         firestore.collection("userDetail")
                             .whereEqualTo("nric", nric)
@@ -602,7 +602,7 @@ fun addDependencyToFirestore(
                     }
             } else {
                 Log.e("Create Dependency Error", "Dependency already exists for this user!")
-                Toast.makeText(context, "Duplicate Record Found!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
             }
         }
         .addOnFailureListener { e ->
