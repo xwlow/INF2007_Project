@@ -587,7 +587,7 @@ fun addDependencyToFirestore(
         .whereEqualTo("caregiverId", userId)
         .get()
         .addOnSuccessListener { result ->
-            if (result.size() >= 3) {
+            if (result.size() > 3) {
                 Toast.makeText(
                     context,
                     "You have reached the maximum limit of 3 dependencies.",
