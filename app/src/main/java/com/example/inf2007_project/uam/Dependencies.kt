@@ -581,35 +581,67 @@ fun addDependencyToFirestore(
         //"nric" to dependency.nric,
         //"phone" to dependency.phone,
         "relationship" to dependency.relationship
-        )
+    )
 
     firestore.collection("dependencies")
         .whereEqualTo("caregiverId", userId)
-        .whereEqualTo("dependencyId", dependency.dependencyId)
         .get()
         .addOnSuccessListener { result ->
-            if (result.isEmpty) {
-                // Add dependency without documentId
+            if (result.size() >= 3) {
+                Toast.makeText(
+                    context,
+                    "You have reached the maximum limit of 3 dependencies.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@addOnSuccessListener
+            }
+
+//              Add dependency without documentId
                 firestore.collection("dependencies")
                     .add(dependencyMap)
                     .addOnSuccessListener { documentRef ->
                         Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
                         Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
                     }
-                    .addOnFailureListener { e ->
-                        Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
-                        Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
-                    }
-            } else {
-                Log.e("Create Dependency Error", "Dependency already exists for this user!")
-                Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
-            }
+                // Error msg
+                .addOnFailureListener { e ->
+                    Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
+                    Toast.makeText(
+                        context,
+                        "Failed to add dependency. Try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
         }
         .addOnFailureListener { e ->
-            Log.e("Create Dependency Error", "Error checking for duplicates: ${e.message}")
-            Toast.makeText(context, "Error checking for duplicates. Try again.", Toast.LENGTH_SHORT).show()
+            Log.e("Dependency Check Error", "Error checking for dependency count: ${e.message}")
+            Toast.makeText(context, "Error checking dependencies. Try again.", Toast.LENGTH_SHORT)
+                .show()
         }
 }
+
+//            if (result.isEmpty) {
+//                // Add dependency without documentId
+//                firestore.collection("dependencies")
+//                    .add(dependencyMap)
+//                    .addOnSuccessListener { documentRef ->
+//                        Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
+//                        Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
+//                    }
+//                    .addOnFailureListener { e ->
+//                        Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
+//                        Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
+//                    }
+//            } else {
+//                Log.e("Create Dependency Error", "Dependency already exists for this user!")
+//                Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
+//            }
+//        }
+//        .addOnFailureListener { e ->
+//            Log.e("Create Dependency Error", "Error checking for duplicates: ${e.message}")
+//            Toast.makeText(context, "Error checking for duplicates. Try again.", Toast.LENGTH_SHORT).show()
+//        }
+//}
 
 
 fun updateDependencyRelationship(documentId: String, newRelationship: String, firestore: FirebaseFirestore) {
