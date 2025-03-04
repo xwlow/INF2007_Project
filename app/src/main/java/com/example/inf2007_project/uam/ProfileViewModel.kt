@@ -178,12 +178,13 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
-    fun deleteProfile(authViewModel: AuthViewModel) {
+    fun deleteProfile(authViewModel: AuthViewModel, context: Context, onAccountDeleted: () -> Unit) {
         var user = auth.currentUser
         val userUID = getUserUID()
         if (userUID.isEmpty()) return
 
         val userInfoRef = db.collection("userDetail").document(userUID)
+
         userInfoRef.delete().addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 Log.d("Firebase", "User info deleted successfully.")
@@ -191,6 +192,11 @@ class ProfileViewModel : ViewModel() {
                     ?.addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             Log.d("Firebase", "User account deleted successfully.")
+
+                            FirebaseAuth.getInstance().signOut()
+
+                            Toast.makeText(context, "Account has been deleted.", Toast.LENGTH_SHORT).show()
+
                             Log.d("Current User", user.toString())
                             authViewModel.signout()
                         } else {

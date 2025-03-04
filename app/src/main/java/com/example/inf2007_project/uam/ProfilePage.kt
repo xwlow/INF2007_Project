@@ -254,7 +254,13 @@ fun ProfilePage(
                         confirmButton = {
                             Button(
                                 onClick = {
-                                    profileViewModel.deleteProfile(authViewModel)
+                                    profileViewModel.deleteProfile(authViewModel, context){
+                                        navController.navigate("login"){
+                                            popUpTo("profile"){
+                                                inclusive= true
+                                            }
+                                        }
+                                    }
                                     Toast.makeText(context, "User deleted!", Toast.LENGTH_SHORT).show()
                                     showDialog = false
                                 },
