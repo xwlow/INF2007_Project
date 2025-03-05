@@ -1,5 +1,10 @@
 package com.example.inf2007_project.pages
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import androidx.health.connect.client.time.TimeRangeFilter
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -51,15 +56,35 @@ import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.testData
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.MaterialTheme
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.request.ReadRecordsRequest
+import kotlinx.coroutines.delay
+import java.time.Instant
 
 
 data class BottomNavItem(val label: String, val icon: ImageVector, val route: String)
 
+
 @Composable
 fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel) {
-
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
+    val healthConnectClient = HealthConnectClient.getOrCreate(context)
+    val heartRateData = remember { mutableStateOf("No Data") } // To store fetched heart rate data
+
+    LaunchedEffect(Unit) {
+        // Continuously fetch heart rate data every 5 seconds
+        while (true) {
+            val startTime = Instant.now().minusSeconds(3600) // One hour ago
+            val endTime = Instant.now() // Current time
+            readStepsByTimeRange(healthConnectClient, startTime, endTime) { heartRate ->
+                heartRateData.value = heartRate // Update the UI with fetched heart rate
+                Log.d("HealthConnect", "Heart rate updated: $heartRate")
+            }
+            delay(5000) // Wait 5 seconds before fetching again
+        }
+    }
 
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
@@ -105,7 +130,7 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
             Spacer(modifier = Modifier.height(24.dp))
 
             // Vitals
-            VitalsGrid()
+            VitalsGrid(heartRate = heartRateData.value)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -117,12 +142,12 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
 
 
 @Composable
-fun VitalsGrid() {
+fun VitalsGrid(heartRate: String) {  // Accept heart rate data as a parameter
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
         ) {
-            VitalCard(label = "Heartrate", value = "78", unit = "Bpm")
+            VitalCard(label = "Heartrate", value = heartRate, unit = "Bpm")  // Use dynamic heart rate
             VitalCard(label = "Oxygen", value = "98", unit = "%")
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -216,3 +241,30 @@ fun BottomNavigationBar(navController: NavController) {
         }
     }
 }
+
+suspend fun readStepsByTimeRange(
+    healthConnectClient: HealthConnectClient,
+    startTime: Instant,
+    endTime: Instant,
+    onHeartRateFetched: (String) -> Unit
+) {
+    try {
+        val response =
+            healthConnectClient.readRecords(
+                ReadRecordsRequest(
+                    HeartRateRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                )
+            )
+
+        // Loop through the heart rate records and log the values
+        for (heartRateRecord in response.records) {
+            val heartRate = heartRateRecord.samples.firstOrNull()?.beatsPerMinute ?: "No Data"
+            Log.d("HealthConnect", "Heart Rate: $heartRate")
+            onHeartRateFetched("$heartRate bpm") // Pass the formatted data to callback
+        }
+    } catch (e: Exception) {
+        Log.e("HealthConnect", "Error fetching heart rate: ${e.message}")
+    }
+}
+
