@@ -7,8 +7,9 @@ data class NearbySearchResponse(
 data class Place(
     val name: String,
     val vicinity: String,
-    val geometry: Geometry,
-    val place_id: String
+    //val geometry: Geometry,
+    val place_id: String,
+    var isBookmarked: Boolean = false
 )
 
 data class Geometry(

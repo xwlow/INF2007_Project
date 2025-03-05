@@ -2,18 +2,29 @@ package com.example.inf2007_project.clinic
 
 import Place
 import android.util.Log
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class NearbySearchViewModel : ViewModel() {
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+
     private val _places = mutableStateOf<List<Place>>(emptyList())
     val places: List<Place> get() = _places.value
+
+    private val _bookmarkedClinics = mutableStateOf<List<Place>>(emptyList())
+    val bookmarkedClinics: List<Place> get() = _bookmarkedClinics.value
+    val bookmarkStates = mutableStateMapOf<String, Boolean>()
 
     // For debugging
     val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
@@ -28,20 +39,193 @@ class NearbySearchViewModel : ViewModel() {
         .build()
         .create(ApiNearbySearch::class.java)
 
+//    fun fetchNearbyPlaces(keyword: String, location: String, radius: Int, apiKey: String) {
+//        viewModelScope.launch {
+//            try {
+//                // Make the API call
+//                val response = retrofit.getNearbyPlaces(keyword, location, radius, apiKey)
+//                if (response.status == "OK") {
+//                    _places.value = response.results
+//                    Log.d("NEARBY", "Fetched places: ${_places.value.size}")
+//                } else {
+//                    Log.e("NEARBY", "API error: ${response.status} - ${response.errorMessage}")
+//                }
+//            } catch (e: Exception) {
+//                Log.e("NEARBY", "Network error: ${e.message}")
+//            }
+//        }
+//    }
+
     fun fetchNearbyPlaces(keyword: String, location: String, radius: Int, apiKey: String) {
         viewModelScope.launch {
             try {
-                // Make the API call
+                val user = auth.currentUser
+                if (user == null) {
+                    Log.d("User", "No user logged in")
+                    return@launch
+                }
+
+//                val bookmarkedClinics = mutableSetOf<String>() // Store placeIds of bookmarked clinics
+                val bookmarkedClinicsSet = mutableSetOf<String>()
+                val bookmarkedClinicsList = mutableListOf<Place>()
+
+                val snapshot = db.collection("bookmarked")
+                    .whereEqualTo("userId", user.uid)
+                    .get()
+                    .await()
+
+                for (document in snapshot.documents) {
+                    val placeId = document.getString("placeId")
+                    val name = document.getString("clinicName") ?: "Unknown Clinic"
+                    val vicinity = document.getString("vicinity") ?: "Unknown Location"
+
+                    if (placeId != null) {
+                        bookmarkedClinicsSet.add(placeId)
+                        bookmarkedClinicsList.add(
+                            Place(
+                                name,
+                                vicinity,
+                                placeId,
+                                isBookmarked = true
+                            )
+                        )
+
+                        bookmarkStates[placeId] = true
+                    }
+                }
+
+                // Update bookmarked clinics state
+                _bookmarkedClinics.value = bookmarkedClinicsList
+
+                Log.d("Fetched Clinics", bookmarkedClinics.toString())
+
                 val response = retrofit.getNearbyPlaces(keyword, location, radius, apiKey)
                 if (response.status == "OK") {
-                    _places.value = response.results
-                    Log.d("NEARBY", "Fetched places: ${_places.value.size}")
+                    val placesWithBookmarks = response.results.map { place ->
+                        place.copy(isBookmarked = bookmarkedClinicsSet.contains(place.place_id))
+                    }
+
+                    _places.value = placesWithBookmarks // Update UI with bookmark status
+                    Log.d(
+                        "NEARBY",
+                        "Fetched places: ${_places.value.size}, Bookmarked: ${bookmarkedClinics.size}"
+                    )
                 } else {
                     Log.e("NEARBY", "API error: ${response.status} - ${response.errorMessage}")
                 }
+
             } catch (e: Exception) {
-                Log.e("NEARBY", "Network error: ${e.message}")
+                Log.e("NEARBY", "Error fetching bookmarks or places: ${e.message}")
+            }
+        }
+    }
+
+    fun toggleBookmark(place: Place) {
+        viewModelScope.launch {
+            val user = auth.currentUser ?: return@launch
+            val placeId = place.place_id
+
+            if (bookmarkStates[placeId] == true) {
+                db.collection("bookmarked").document("${user.uid}-$placeId").delete().await()
+                bookmarkStates[placeId] = false
+
+            } else {
+                val clinicData = mapOf(
+                    "userId" to user.uid,
+                    "clinicName" to place.name,
+                    "vicinity" to place.vicinity,
+                    "placeId" to placeId
+                )
+                db.collection("bookmarked").document("${user.uid}-$placeId").set(clinicData).await()
+                bookmarkStates[placeId] = true
+
+                _bookmarkedClinics.value = _bookmarkedClinics.value + place.copy(isBookmarked = true)
+            }
+
+            _places.value = _places.value.map {
+                if (it.place_id == placeId) it.copy(isBookmarked = bookmarkStates[placeId] ?: false)
+                else it
+            }
+
+            _bookmarkedClinics.value = _bookmarkedClinics.value.filter {
+                bookmarkStates[it.place_id] == true
+            }
+        }
+
+        fun saveBookmarkedClinic(
+            clinicName: String,
+            vicinity: String,
+            placeId: String,
+            onSuccess: () -> Unit,
+            onFailure: (Exception) -> Unit
+        ) {
+            viewModelScope.launch {
+                try {
+                    val user = auth.currentUser
+                    if (user == null) {
+                        onFailure(Exception("User not logged in"))
+                        return@launch
+                    }
+
+                    val clinicData = hashMapOf(
+                        "userId" to user.uid,
+                        "clinicName" to clinicName,
+                        "vicinity" to vicinity,
+                        "placeId" to placeId
+                    )
+
+                    val firestore = FirebaseFirestore.getInstance()
+                    val docRef = firestore.collection("bookmarked").document("${user.uid}-$placeId")
+
+                    // Check if already bookmarked to prevent duplicates
+                    val snapshot = docRef.get().await()
+                    if (!snapshot.exists()) {
+                        docRef.set(clinicData).await()
+                    }
+
+                    // Updates immediately, reduces the delay on icon
+                    _places.value = _places.value.map {
+                        if (it.place_id == placeId) it.copy(isBookmarked = true) else it
+                    }
+
+                    onSuccess()
+                } catch (e: Exception) {
+                    onFailure(e)
+                }
+            }
+        }
+
+        fun removeBookmarkedClinic(
+            placeId: String,
+            onSuccess: () -> Unit,
+            onFailure: (Exception) -> Unit
+        ) {
+            viewModelScope.launch {
+                try {
+                    val user = auth.currentUser
+                    if (user == null) {
+                        onFailure(Exception("User not logged in"))
+                        return@launch
+                    }
+
+                    val firestore = FirebaseFirestore.getInstance()
+                    val docRef = firestore.collection("bookmarked").document("${user.uid}-$placeId")
+
+                    val snapshot = docRef.get().await()
+                    if (snapshot.exists()) {
+                        docRef.delete().await()
+                    }
+
+                    _places.value = _places.value.map {
+                        if (it.place_id == placeId) it.copy(isBookmarked = false) else it
+                    }
+                    onSuccess()
+
+                } catch (e: Exception) {
+                    onFailure(e)
+                }
             }
         }
     }
 }
+
