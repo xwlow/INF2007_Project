@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.inf2007_project"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -56,6 +56,8 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore)
     implementation(libs.generativeai)
+    implementation(libs.androidx.espresso.core)
+    implementation(libs.play.services.auth)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,7 +79,7 @@ dependencies {
 
         defaultConfig {
             applicationId = "com.example.inf2007_project"
-            minSdk = 24
+            minSdk = 26
             targetSdk = 34
             versionCode = 1
             versionName = "1.0"
@@ -138,5 +140,8 @@ dependencies {
 
         // Debugging for nearbysearch API
         implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+        implementation ("androidx.health.connect:connect-client:1.1.0-alpha12")
+        implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
     }
 }
