@@ -120,10 +120,11 @@ fun BookPage(
         if (userId != null) {
             authViewModel.fetchUserType(userId) { fetchedUserType ->
                 userType = fetchedUserType
-                bookViewModel.fetchDependenciesWithDetails(userId, userType!!)
+                bookViewModel.fetchDependenciesWithDetails(userId)
             }
         }
     }
+
 
     Log.d("dependenciesWithDetails", dependenciesWithDetails.toString())
 

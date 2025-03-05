@@ -52,10 +52,13 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
 
     LaunchedEffect(userId) {
         if (userId != null) {
+            Log.d("Debug", "Fetching dependencies for user: $userId")
             authViewModel.fetchUserType(userId) { fetchedUserType ->
                 userType = fetchedUserType
-                bookViewModel.fetchDependenciesWithDetails(userId, userType!!)
+                bookViewModel.fetchDependenciesWithDetails(userId)
             }
+        } else {
+            Log.e("Debug", "UserId is null, cannot fetch dependencies.")
         }
     }
 
@@ -91,17 +94,22 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                 }
                 Spacer(modifier = Modifier.height(24.dp))
 
-            dependenciesWithDetails.forEachIndexed { index, (dependency, userDetails) ->
-                DependencyDisplay(
-                    dependency = dependency,
-                    userDetails = userDetails,
-                    // auto increment for dep
-                    dependencyNumber = index + 1,
-                    onEdit = { selectedDependency = dependency },
-                    navController,
-                    userType = userType
-                )
-            }
+            dependenciesWithDetails
+                .filter {
+                    (it.first.dependencyId != userId && userType == "Caregiver") ||
+                            (it.first.caregiverId != userId && userType == "Dependency")
+                }
+                .forEachIndexed { index, (dependency, userDetails) ->
+                    DependencyDisplay(
+                        dependency = dependency,
+                        userDetails = userDetails,
+                        //auto increment for dep
+                        dependencyNumber = index + 1,
+                        onEdit = { selectedDependency = dependency },
+                        navController,
+                        userType = userType
+                    )
+                }
         }
 
         // selected dep info & features
@@ -135,7 +143,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                 dependency = DependencyData(),
                 onDismiss = { isAddingNew = false },
                 onSave = { newDependency ->
-                    addDependencyToFirestore(newDependency, firestore, userId!!, context)
+                    addDependencyToFirestore(newDependency, firestore, userId!!, context, bookViewModel)
                     //dependencies = dependencies + newDependency
                     isAddingNew = false
                 }
@@ -535,7 +543,6 @@ fun DependencyEditDialog(
     )
 }
 
-
 // Below are the firebase code
 
 // firebase update
@@ -564,16 +571,20 @@ fun addDependencyToFirestore(
     dependency: DependencyData,
     firestore: FirebaseFirestore,
     userId: String,
-    context: Context
+    context: Context,
+    bookViewModel: BookViewModel
 ) {
+    // max 3 dependencies only
     firestore.collection("dependencies")
         .whereEqualTo("caregiverId", userId)
         .get()
-        .addOnSuccessListener { result ->
-            if (result.size() >= 3) {
-                Log.e("Create Dependency Error", "Cannot add more than 3 dependencies!")
-                Toast.makeText(context, "You can only have up to 3 dependencies!", Toast.LENGTH_SHORT).show()
+        .addOnSuccessListener { snapshot ->
+            val currentDependencyCount = snapshot.documents.size
+
+            if (currentDependencyCount >= 3) {
+                Toast.makeText(context, "You can only add up to 3 dependencies!", Toast.LENGTH_SHORT).show()
             } else {
+                // Proceed to check if the dependency already exists
                 firestore.collection("dependencies")
                     .whereEqualTo("caregiverId", userId)
                     .whereEqualTo("dependencyId", dependency.dependencyId)
@@ -583,6 +594,7 @@ fun addDependencyToFirestore(
                             // Convert DependencyData to a Map without "documentId"
                             val dependencyMap = hashMapOf(
                                 "dependencyId" to dependency.dependencyId,
+                                "caregiverId" to userId,
                                 //"name" to dependency.name,
                                 "caregiverId" to userId,
                                 //"email" to dependency.email,
@@ -593,24 +605,27 @@ fun addDependencyToFirestore(
 
                             firestore.collection("dependencies")
                                 .add(dependencyMap)
-                                .addOnSuccessListener { documentRef ->
-                                    Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
+                                .addOnSuccessListener {
+                                    Log.d("Create Dependency", "Dependency created successfully")
                                     Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
+
+                                    // updated data for dependant & caregiver
+                                    bookViewModel.fetchDependenciesWithDetails(userId)
+                                    bookViewModel.fetchDependenciesWithDetails(dependency.dependencyId!!)
                                 }
                                 .addOnFailureListener { e ->
                                     Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
                                     Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
                                 }
                         } else {
-                            Log.e("Create Dependency Error", "Dependency already exists for this user!")
                             Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    .addOnFailureListener { e ->
-                        Log.e("Create Dependency Error", "Error checking for duplicates: ${e.message}")
-                        Toast.makeText(context, "Error checking for duplicates. Try again.", Toast.LENGTH_SHORT).show()
-                    }
             }
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore Error", "Failed to count dependencies: ${e.message}")
+            Toast.makeText(context, "Error checking dependencies. Try again.", Toast.LENGTH_SHORT).show()
         }
 }
 
