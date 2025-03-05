@@ -159,9 +159,7 @@ class MainActivity : ComponentActivity() {
 
     private fun initializeHealthConnectClient(context: Context) {
         try {
-            // Create or get an existing HealthConnectClient instance
             val healthConnectClient = HealthConnectClient.getOrCreate(context)
-            // Now you can issue operations with healthConnectClient
             Log.d("HealthConnect", "Health Connect SDK is available and client initialized.")
 
             checkPermissionsAndRun(healthConnectClient)
