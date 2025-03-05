@@ -59,9 +59,6 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
         }
     }
 
-
-
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -132,7 +129,6 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
 //                }
             )
         }
-
 
         if (isAddingNew) {
             DependencyEditDialog(
@@ -314,18 +310,17 @@ fun DependencyEditDialog(
 
 
     fun searchUser() {
-
         isSearching = true
         searchError = false
         searched = true
         dependencySelfCheck = false
         nricCheck = false
 
-
+        val currentUser = FirebaseAuth.getInstance().currentUser
 
         // First check if the entered NRIC matches the current user's NRIC
         firestore.collection("userDetail")
-            .whereEqualTo("uid", user?.uid)
+            .whereEqualTo("uid", currentUser?.uid)
             .get()
             .addOnSuccessListener { currentUserDocuments ->
                 if (!currentUserDocuments.isEmpty) {
@@ -343,12 +338,9 @@ fun DependencyEditDialog(
 //                            "You cannot add yourself as a dependency!",
 //                            Toast.LENGTH_SHORT
 //                        ).show()
-                    }
-                    else if (!nric.matches(nricRegex)) {
+                    } else if (!nric.matches(nricRegex)) {
                         nricCheck = true
-
-                    }
-                    else {
+                    } else {
                         // Proceed with the regular search
                         firestore.collection("userDetail")
                             .whereEqualTo("nric", nric)
@@ -380,8 +372,6 @@ fun DependencyEditDialog(
                                 val doc = documents.documents.first()
                                 searchedUser = doc.toObject(DependencyData::class.java)
                                     ?.copy(dependencyId = doc.id)
-
-
                             } else {
                                 searchError = true
                                 searchedUser = null
@@ -392,11 +382,8 @@ fun DependencyEditDialog(
                             searchError = true
                         }
                 }
-
             }
     }
-
-
 
     AlertDialog(
 
@@ -561,9 +548,16 @@ fun DependencyEditDialog(
 
 // firebase delete dep
 fun deleteDependencyFromFirestore(documentId: String, firestore: FirebaseFirestore) {
-    firestore.collection("dependencies").document(documentId).delete()
-    Log.d("Delete Dependency", "Deleted dependency with id: $documentId")
+    firestore.collection("dependencies").document(documentId)
+        .delete()
+        .addOnSuccessListener {
+            Log.d("Delete Dependency", "Deleted dependency with id: $documentId")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Delete Dependency Error", "Failed to delete: ${e.message}")
+        }
 }
+
 
 // firebase add dep
 fun addDependencyToFirestore(
@@ -572,77 +566,53 @@ fun addDependencyToFirestore(
     userId: String,
     context: Context
 ) {
-    // Convert DependencyData to a Map without "documentId"
-    val dependencyMap = hashMapOf(
-        "dependencyId" to dependency.dependencyId,
-        //"name" to dependency.name,
-        "caregiverId" to userId,
-        //"email" to dependency.email,
-        //"nric" to dependency.nric,
-        //"phone" to dependency.phone,
-        "relationship" to dependency.relationship
-    )
-
     firestore.collection("dependencies")
         .whereEqualTo("caregiverId", userId)
         .get()
         .addOnSuccessListener { result ->
-            if (result.size() > 3) {
-                Toast.makeText(
-                    context,
-                    "You have reached the maximum limit of 3 dependencies.",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@addOnSuccessListener
-            }
-
-//              Add dependency without documentId
+            if (result.size() >= 3) {
+                Log.e("Create Dependency Error", "Cannot add more than 3 dependencies!")
+                Toast.makeText(context, "You can only have up to 3 dependencies!", Toast.LENGTH_SHORT).show()
+            } else {
                 firestore.collection("dependencies")
-                    .add(dependencyMap)
-                    .addOnSuccessListener { documentRef ->
-                        Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
-                        Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
+                    .whereEqualTo("caregiverId", userId)
+                    .whereEqualTo("dependencyId", dependency.dependencyId)
+                    .get()
+                    .addOnSuccessListener { duplicateCheck ->
+                        if (duplicateCheck.isEmpty) {
+                            // Convert DependencyData to a Map without "documentId"
+                            val dependencyMap = hashMapOf(
+                                "dependencyId" to dependency.dependencyId,
+                                //"name" to dependency.name,
+                                "caregiverId" to userId,
+                                //"email" to dependency.email,
+                                //"nric" to dependency.nric,
+                                //"phone" to dependency.phone,
+                                "relationship" to dependency.relationship
+                            )
+
+                            firestore.collection("dependencies")
+                                .add(dependencyMap)
+                                .addOnSuccessListener { documentRef ->
+                                    Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
+                                    Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
+                                    Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            Log.e("Create Dependency Error", "Dependency already exists for this user!")
+                            Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                // Error msg
-                .addOnFailureListener { e ->
-                    Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
-                    Toast.makeText(
-                        context,
-                        "Failed to add dependency. Try again.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-        }
-        .addOnFailureListener { e ->
-            Log.e("Dependency Check Error", "Error checking for dependency count: ${e.message}")
-            Toast.makeText(context, "Error checking dependencies. Try again.", Toast.LENGTH_SHORT)
-                .show()
+                    .addOnFailureListener { e ->
+                        Log.e("Create Dependency Error", "Error checking for duplicates: ${e.message}")
+                        Toast.makeText(context, "Error checking for duplicates. Try again.", Toast.LENGTH_SHORT).show()
+                    }
+            }
         }
 }
-
-//            if (result.isEmpty) {
-//                // Add dependency without documentId
-//                firestore.collection("dependencies")
-//                    .add(dependencyMap)
-//                    .addOnSuccessListener { documentRef ->
-//                        Log.d("Create Dependency", "Dependency created with ID: ${documentRef.id}")
-//                        Toast.makeText(context, "Dependency added successfully!", Toast.LENGTH_SHORT).show()
-//                    }
-//                    .addOnFailureListener { e ->
-//                        Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
-//                        Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
-//                    }
-//            } else {
-//                Log.e("Create Dependency Error", "Dependency already exists for this user!")
-//                Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//        .addOnFailureListener { e ->
-//            Log.e("Create Dependency Error", "Error checking for duplicates: ${e.message}")
-//            Toast.makeText(context, "Error checking for duplicates. Try again.", Toast.LENGTH_SHORT).show()
-//        }
-//}
-
 
 fun updateDependencyRelationship(documentId: String, newRelationship: String, firestore: FirebaseFirestore) {
     firestore.collection("dependencies").document(documentId)
