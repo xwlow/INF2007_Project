@@ -22,8 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import com.example.inf2007_project.clinic.BookViewModel
 import com.example.inf2007_project.clinic.NearbySearchViewModel
 import com.example.inf2007_project.clinic.QueueViewModel
@@ -74,6 +76,9 @@ class MainActivity : ComponentActivity() {
 
     private val PERMISSIONS = setOf(
         HealthPermission.getReadPermission(HeartRateRecord::class),
+        HealthPermission.getReadPermission(StepsRecord::class),
+        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
+        HealthPermission.getReadPermission(DistanceRecord::class),
     )
 
     private val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()

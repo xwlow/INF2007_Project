@@ -54,6 +54,7 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
             SignupPage(modifier, navController, authViewModel)
         }
         composable("home"){
+
             HomePage(modifier, navController, authViewModel, testViewModel)
         }
         composable("clinicsTest"){
