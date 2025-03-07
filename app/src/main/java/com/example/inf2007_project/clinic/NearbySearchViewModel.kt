@@ -78,6 +78,7 @@ class NearbySearchViewModel : ViewModel() {
                     val placeId = document.getString("placeId")
                     val name = document.getString("clinicName") ?: "Unknown Clinic"
                     val vicinity = document.getString("vicinity") ?: "Unknown Location"
+                    val rating = document.getDouble("rating") ?: 0.0
 
                     if (placeId != null) {
                         bookmarkedClinicsSet.add(placeId)
@@ -86,7 +87,8 @@ class NearbySearchViewModel : ViewModel() {
                                 name,
                                 vicinity,
                                 placeId,
-                                isBookmarked = true
+                                isBookmarked = true,
+                                rating
                             )
                         )
 
@@ -151,81 +153,23 @@ class NearbySearchViewModel : ViewModel() {
                 bookmarkStates[it.place_id] == true
             }
         }
-
-        fun saveBookmarkedClinic(
-            clinicName: String,
-            vicinity: String,
-            placeId: String,
-            onSuccess: () -> Unit,
-            onFailure: (Exception) -> Unit
-        ) {
-            viewModelScope.launch {
-                try {
-                    val user = auth.currentUser
-                    if (user == null) {
-                        onFailure(Exception("User not logged in"))
-                        return@launch
-                    }
-
-                    val clinicData = hashMapOf(
-                        "userId" to user.uid,
-                        "clinicName" to clinicName,
-                        "vicinity" to vicinity,
-                        "placeId" to placeId
-                    )
-
-                    val firestore = FirebaseFirestore.getInstance()
-                    val docRef = firestore.collection("bookmarked").document("${user.uid}-$placeId")
-
-                    // Check if already bookmarked to prevent duplicates
-                    val snapshot = docRef.get().await()
-                    if (!snapshot.exists()) {
-                        docRef.set(clinicData).await()
-                    }
-
-                    // Updates immediately, reduces the delay on icon
-                    _places.value = _places.value.map {
-                        if (it.place_id == placeId) it.copy(isBookmarked = true) else it
-                    }
-
-                    onSuccess()
-                } catch (e: Exception) {
-                    onFailure(e)
-                }
-            }
-        }
-
-        fun removeBookmarkedClinic(
-            placeId: String,
-            onSuccess: () -> Unit,
-            onFailure: (Exception) -> Unit
-        ) {
-            viewModelScope.launch {
-                try {
-                    val user = auth.currentUser
-                    if (user == null) {
-                        onFailure(Exception("User not logged in"))
-                        return@launch
-                    }
-
-                    val firestore = FirebaseFirestore.getInstance()
-                    val docRef = firestore.collection("bookmarked").document("${user.uid}-$placeId")
-
-                    val snapshot = docRef.get().await()
-                    if (snapshot.exists()) {
-                        docRef.delete().await()
-                    }
-
-                    _places.value = _places.value.map {
-                        if (it.place_id == placeId) it.copy(isBookmarked = false) else it
-                    }
-                    onSuccess()
-
-                } catch (e: Exception) {
-                    onFailure(e)
-                }
-            }
-        }
     }
+
+    fun sortClinicsByNameAtoZ(filteredClinics: List<Place>): List<Place> {
+        return filteredClinics.sortedBy { it.name.lowercase() }
+    }
+
+    fun sortClinicsByNameZtoA(filteredClinics: List<Place>): List<Place> {
+        return filteredClinics.sortedByDescending { it.name.lowercase() }
+    }
+
+    fun sortClinicsByRatingDescending(clinics: List<Place>): List<Place> {
+        return clinics.sortedByDescending { it.rating ?: 0.0 }
+    }
+
+    fun sortClinicsByRatingAscending(clinics: List<Place>): List<Place> {
+        return clinics.sortedBy { it.rating ?: 0.0 }
+    }
+
 }
 

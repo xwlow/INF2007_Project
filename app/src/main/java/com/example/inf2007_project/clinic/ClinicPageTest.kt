@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -35,8 +36,11 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -46,6 +50,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,11 +70,14 @@ import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel) {
     val keyword = "clinic"
-    val radius = 500
+    var radius by remember { mutableStateOf(500) }
     val apiKey = "AIzaSyDZ7GHGvGgfAcldVbm8-zrM4Fghsds89CA"
     val context = LocalContext.current
     val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
@@ -79,16 +87,40 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
     var locationFetched by remember { mutableStateOf(false) }
 
     // Observe the clinics data
-    val places = nearbySearchViewModel.places
+    var places = nearbySearchViewModel.places
     val bookmarkedClinics = nearbySearchViewModel.bookmarkedClinics
-    var isExpanded by remember { mutableStateOf(false) }
+
+    // Expanding btns
+    var isExpandedBookmark by remember { mutableStateOf(false) }
+    var isExpandedSort by remember { mutableStateOf(false) }
+    var isExpandedFilter by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    var sortOption by remember { mutableStateOf("DEFAULT") }
     Log.d("Fetched Clinics", places.toString())
+
 
     // Text filter for clinics
     var searchQuery by remember { mutableStateOf("") }
-    val filteredClinics = remember(searchQuery) {
+
+    var filteredClinics = remember(searchQuery) {
         if (searchQuery.isBlank()) places else places.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
+
+    Log.d("filteredClinics", filteredClinics.toString())
+
+    LaunchedEffect(places, sortOption) {
+        places = when (sortOption) {
+            "A-Z" -> nearbySearchViewModel.sortClinicsByNameAtoZ(places)
+            "Z-A" -> nearbySearchViewModel.sortClinicsByNameZtoA(places)
+            else -> nearbySearchViewModel.places
+        }
+        filteredClinics = when (sortOption) {
+            "A-Z" -> nearbySearchViewModel.sortClinicsByNameAtoZ(filteredClinics)
+            "Z-A" -> nearbySearchViewModel.sortClinicsByNameZtoA(filteredClinics)
+            else -> places
+        }
+    }
+
     val filteredBookmarkedClinics = remember(searchQuery) {
         if (searchQuery.isBlank()) bookmarkedClinics else bookmarkedClinics.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
@@ -134,8 +166,8 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
                 .padding(
                     start = 16.dp, // Left padding
                     end = 16.dp,   // Right padding
-                    top = paddingValues.calculateTopPadding(), // Keeps space for top UI
-                    bottom = paddingValues.calculateBottomPadding() // Keeps space for bottom UI
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding()
                 ),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -164,19 +196,19 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { isExpanded = !isExpanded }
+                            .clickable { isExpandedBookmark = !isExpandedBookmark }
                             .padding(vertical = 8.dp, horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Bookmarked Clinics", fontWeight = FontWeight.Bold, fontSize = 24.sp)
                         Icon(
-                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isExpanded) "Collapse" else "Expand"
+                            imageVector = if (isExpandedBookmark) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (isExpandedBookmark) "Collapse" else "Expand"
                         )
                     }
 
                     // bookmarked clinics
-                    if (isExpanded) {
+                    if (isExpandedBookmark) {
                         Box(
                         ) {
                             LazyColumn(
@@ -216,56 +248,149 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
                         Text("Nearby Clinics", fontWeight = FontWeight.Bold, fontSize = 24.sp)
 
                         Row {
-                            Button(
-                                onClick = {
-                                    // TODO: FILTER BUTTONS (open_now (t,f), radius (500, 1000 etc.), rating of clinic (1-5))
-
-                                },
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text("Filter")
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Filter"
-                                )
+                            Box {
+                                Button(
+                                    onClick = {
+                                        isExpandedFilter = true
+                                    },
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Filter")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "Filter"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = isExpandedFilter,
+                                    onDismissRequest = { isExpandedFilter = false }
+                                ) {
+                                    Text(
+                                        text = "Clinics in vicinity:",
+                                        modifier = Modifier.padding(8.dp),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Radius 500 meters") },
+                                        onClick = {
+                                            radius = 500
+                                            nearbySearchViewModel.fetchNearbyPlaces(
+                                                keyword,
+                                                location,
+                                                radius,
+                                                apiKey
+                                            )
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Radius 1000 meters") },
+                                        onClick = {
+                                            radius = 1000
+                                            nearbySearchViewModel.fetchNearbyPlaces(
+                                                keyword,
+                                                location,
+                                                radius,
+                                                apiKey
+                                            )
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Radius 1500 meters") },
+                                        onClick = {
+                                            radius = 1500
+                                            nearbySearchViewModel.fetchNearbyPlaces(
+                                                keyword,
+                                                location,
+                                                radius,
+                                                apiKey
+                                            )
+                                        }
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.width(16.dp))
-
-                            Button(
-                                onClick = {
-                                    // TODO: Sort based on (rating, starting letter (default),
-                                },
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text("Sort")
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(imageVector = Icons.Default.Menu, contentDescription = "Sort")
+                            Box {
+                                Button(
+                                    onClick = {
+                                        isExpandedSort = true
+                                    },
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Sort By")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Sort"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = isExpandedSort,
+                                    onDismissRequest = { isExpandedSort = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Clinic Name A-Z") },
+                                        onClick = {
+                                            places = nearbySearchViewModel.sortClinicsByNameAtoZ(places)
+                                            filteredClinics = nearbySearchViewModel.sortClinicsByNameAtoZ(filteredClinics)
+                                            isExpandedSort = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Clinic Name Z-A") },
+                                        onClick = {
+                                            places = nearbySearchViewModel.sortClinicsByNameZtoA(places)
+                                            filteredClinics = nearbySearchViewModel.sortClinicsByNameZtoA(filteredClinics)
+                                            isExpandedSort = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Rating highest to lowest") },
+                                        onClick = {
+                                            places = nearbySearchViewModel.sortClinicsByRatingDescending(places)
+                                            filteredClinics = nearbySearchViewModel.sortClinicsByRatingDescending(filteredClinics)
+                                            isExpandedSort = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Rating lowest to highest") },
+                                        onClick = {
+                                            places = nearbySearchViewModel.sortClinicsByRatingAscending(places)
+                                            filteredClinics = nearbySearchViewModel.sortClinicsByRatingAscending(filteredClinics)
+                                            isExpandedSort = false
+                                        }
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    // Display the fetched clinic data in a LazyColumn
-                    Box(
+                        // To position lazy column to the top of the list
+                        LaunchedEffect(places) {
+                            listState.scrollToItem(0)
+                        }
 
-                    ) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        // Display the fetched clinic data in a LazyColumn
+                        Box(
                         ) {
-                            val displayList = if (searchQuery.isBlank()) places else filteredClinics
-                            // Display a loading message if clinics are empty
-                            if (places.isEmpty()) {
-                                item {
-                                    Text("Loading clinics data...")
-                                }
-                            } else {
-                                // Use the 'items' function to iterate over places
-                                items(displayList) { place ->
-                                    ClinicCard(place, navController, nearbySearchViewModel)
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(top = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val displayList =
+                                    if (searchQuery.isBlank()) places else filteredClinics
+                                // Display a loading message if clinics are empty
+                                if (places.isEmpty()) {
+                                    item {
+                                        Text("Loading clinics data...")
+                                    }
+                                } else {
+                                    items(displayList, key = { it.place_id }) { place ->
+                                        ClinicCard(place, navController, nearbySearchViewModel)
+                                    }
                                 }
                             }
                         }
@@ -297,6 +422,7 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
 @Composable
 fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel: NearbySearchViewModel) {
     val isBookmarked by remember { derivedStateOf { nearbySearchViewModel.bookmarkStates[place.place_id] ?: false } }
+    //val isBookmarked by remember(place.place_id) { derivedStateOf { nearbySearchViewModel.bookmarkStates[place.place_id] ?: false } }
     Log.d("poop", place.toString())
     Card(
         modifier = Modifier
@@ -337,6 +463,11 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = place.vicinity,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "Rating: ${place.rating}",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

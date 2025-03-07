@@ -9,7 +9,8 @@ data class Place(
     val vicinity: String,
     //val geometry: Geometry,
     val place_id: String,
-    var isBookmarked: Boolean = false
+    var isBookmarked: Boolean = false,
+    val rating: Double,
 )
 
 data class Geometry(
