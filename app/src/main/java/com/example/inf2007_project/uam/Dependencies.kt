@@ -97,7 +97,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
             dependenciesWithDetails
                 .filter {
                     (it.first.dependencyId != userId && userType == "Caregiver") ||
-                            (it.first.caregiverId != userId && userType == "Dependency")
+                            (it.first.caregiverId != userId && userType == "User")
                 }
                 .forEachIndexed { index, (dependency, userDetails) ->
                     DependencyDisplay(
