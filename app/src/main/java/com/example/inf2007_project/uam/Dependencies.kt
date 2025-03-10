@@ -86,6 +86,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
+            if (userType == "Caregiver") {
                 Button(
                     onClick = { isAddingNew = true },
                     modifier = Modifier.fillMaxWidth()
@@ -93,6 +94,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                     Text("Add Dependency")
                 }
                 Spacer(modifier = Modifier.height(24.dp))
+            }
 
             dependenciesWithDetails
                 .filter {
@@ -611,7 +613,7 @@ fun addDependencyToFirestore(
 
                                     // updated data for dependant & caregiver
                                     bookViewModel.fetchDependenciesWithDetails(userId)
-                                    bookViewModel.fetchDependenciesWithDetails(dependency.dependencyId!!)
+                                    //bookViewModel.fetchDependenciesWithDetails(dependency.dependencyId!!)
                                 }
                                 .addOnFailureListener { e ->
                                     Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
