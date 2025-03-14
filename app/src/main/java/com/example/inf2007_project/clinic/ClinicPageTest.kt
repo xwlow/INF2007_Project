@@ -90,7 +90,7 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Clinics Test Page", fontSize = 32.sp)
+            Text(text = "Clinics Page", fontSize = 32.sp)
 
             // Display the fetched clinic data in a LazyColumn
             LazyColumn(
