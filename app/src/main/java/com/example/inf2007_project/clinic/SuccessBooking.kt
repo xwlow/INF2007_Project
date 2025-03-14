@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -55,7 +56,7 @@ fun SuccessBooking(
 
             Card (
                 shape = CircleShape,
-                modifier = Modifier.size(200.dp)
+                modifier = Modifier.size(150.dp)
                     .padding(bottom = 50.dp),
             ) {
                 Box(
@@ -66,7 +67,7 @@ fun SuccessBooking(
                         painter = painterResource(id = R.drawable.check),
                         contentDescription = "Check",
                         modifier = Modifier
-                            .size(120.dp) // Adjust size
+                            .size(50.dp) // Adjust size
 
                     )
                 }
@@ -74,23 +75,24 @@ fun SuccessBooking(
 
             Text ("Success!",
                 fontWeight = FontWeight.Bold,
-                fontSize = 50.sp,
+                fontSize = 40.sp,
                 modifier = Modifier
                     .padding(bottom = 30.dp)
             )
 
             Text ("You have successfully booked an appointment on",
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
                     .padding(bottom = 30.dp)
                     .widthIn(max = 220.dp))
 
             Text (selectedDate,
                 fontWeight = FontWeight.Bold,
-                fontSize = 50.sp,
+                fontSize = 30.sp,
             )
             Text (chosenTime,
                 fontWeight = FontWeight.Bold,
-                fontSize = 50.sp)
+                fontSize = 30.sp)
         }
     }
 }

@@ -97,86 +97,55 @@ class ProfileViewModel : ViewModel() {
         val currentUser = auth.currentUser
         val currentEmail = currentUser?.email ?: ""
 
-        // If email is changing, handle it specially
-        if (email != currentEmail && currentUser != null) {
-            // First update all non-email fields
-            val nonEmailUpdateData = hashMapOf(
-                "name" to name,
-                "phone" to phone,
-                "DoB" to dob,
-                "nric" to nric
-            )
-
-            userInfoRef.set(nonEmailUpdateData, SetOptions.merge())
-                .addOnSuccessListener {
-                    Log.d("ProfileViewModel", "Non-email fields updated successfully in Firestore")
-
-                    // Now handle email verification
-                    currentUser.verifyBeforeUpdateEmail(email)
-                        .addOnSuccessListener {
-                            Log.d("ProfileViewModel", "Verification email sent to $email")
-
-                            // Set up a listener for auth state changes
-                            val authStateListener = object : FirebaseAuth.AuthStateListener {
-                                override fun onAuthStateChanged(auth: FirebaseAuth) {
-                                    val user = auth.currentUser
-                                    if (user != null && user.email == email) {
-                                        // Email has been verified and updated
-                                        // Update email in Firestore
-                                        val emailUpdateData = hashMapOf("email" to email)
-                                        userInfoRef.set(emailUpdateData, SetOptions.merge())
-                                            .addOnSuccessListener {
-                                                Log.d("ProfileViewModel", "Email updated in Firestore after verification")
-                                                _userDetails.value = UserDetails(name, email, phone, dob, nric)
-                                                // Remove the listener since we're done
-                                                auth.removeAuthStateListener(this)
-                                            }
-                                            .addOnFailureListener { e ->
-                                                Log.e("ProfileViewModel", "Error updating email in Firestore", e)
-                                                // Remove the listener even on failure
-                                                auth.removeAuthStateListener(this)
-                                            }
-                                    }
-                                }
-                            }
-                            authViewModel.signout()
-                            Toast.makeText(context, "Please check inbox, verify and login again with new updated email", Toast.LENGTH_LONG).show()
-                            // Add the auth state listener
-                            auth.addAuthStateListener(authStateListener)
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("ProfileViewModel", "Failed to send verification email", e)
-                            Toast.makeText(context, "Verification Email failed to send, please re-login and try again!", Toast.LENGTH_SHORT).show()
-                        }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("ProfileViewModel", "Error updating non-email fields", e)
-                }
-        } else {
-            // If email is not changing, update everything at once
-            val updateData = hashMapOf(
-                "name" to name,
-                "email" to email,
-                "phone" to phone,
-                "DoB" to dob,
-                "nric" to nric
-            )
-
-            userInfoRef.set(updateData, SetOptions.merge())
-                .addOnSuccessListener {
-                    Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
-                    _userDetails.value = UserDetails(name, email, phone, dob, nric)
-                    Toast.makeText(context, "Profile has been successfully updated", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.e("ProfileViewModel", "Error updating profile", e)
-                    Toast.makeText(context, "Error updating profile", Toast.LENGTH_SHORT).show()
-                }
-
-
-
+        // Get the existing user details
+        val currentUserDetails = _userDetails.value
+        if (currentUserDetails != null &&
+            name == currentUserDetails.name &&
+            email == currentUserDetails.email &&
+            phone == currentUserDetails.phone &&
+            dob == currentUserDetails.dob &&
+            nric == currentUserDetails.nric
+        ) {
+            Log.d("ProfileViewModel", "No changes detected, skipping update.")
+            Toast.makeText(context, "No changes detected, profile not updated.", Toast.LENGTH_SHORT).show()
+            return // Exit early if nothing has changed
         }
+
+        // Proceed with update only if there's a change
+        val updateData = hashMapOf<String, Any>(
+            "name" to name,
+            "phone" to phone,
+            "DoB" to dob,
+            "nric" to nric
+        )
+
+        // Handle email separately (needs verification)
+        if (email != currentEmail && currentUser != null) {
+            currentUser.verifyBeforeUpdateEmail(email)
+                .addOnSuccessListener {
+                    Log.d("ProfileViewModel", "Verification email sent to $email")
+                    authViewModel.signout()
+                    Toast.makeText(context, "Please check inbox, verify and login again with new updated email", Toast.LENGTH_LONG).show()
+                }
+                .addOnFailureListener { e ->
+                    Log.e("ProfileViewModel", "Failed to send verification email", e)
+                    Toast.makeText(context, "Verification Email failed to send, please re-login and try again!", Toast.LENGTH_SHORT).show()
+                }
+        }
+
+        // Update Firestore
+        userInfoRef.set(updateData, SetOptions.merge())
+            .addOnSuccessListener {
+                Log.d("ProfileViewModel", "Profile updated successfully in Firestore")
+                _userDetails.value = UserDetails(name, email, phone, dob, nric)
+                Toast.makeText(context, "Profile has been successfully updated", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Log.e("ProfileViewModel", "Error updating profile", e)
+                Toast.makeText(context, "Error updating profile", Toast.LENGTH_SHORT).show()
+            }
     }
+
 
     fun deleteProfile(authViewModel: AuthViewModel, context: Context, onAccountDeleted: () -> Unit) {
         var user = auth.currentUser
