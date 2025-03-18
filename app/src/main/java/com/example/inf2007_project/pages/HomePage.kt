@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ThumbUp
@@ -214,11 +215,11 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
                     Text("Hello!\n ${username.value}", fontSize = 24.sp)
                 }
                 Row {
-                    IconButton(onClick = { /* Search Action */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
-                    }
-                    IconButton(onClick = { /* Assistant Action */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Assistant")
+//                    IconButton(onClick = { /* Search Action */ }) {
+//                        Icon(Icons.Default.Search, contentDescription = "Search")
+//                    }
+                    IconButton(onClick = {navController.navigate("chatbot")}) {
+                        Icon(Icons.Default.Face, contentDescription = "Assistant")
                     }
                 }
             }
@@ -307,7 +308,7 @@ fun UpcomingConsultationsSection(navController: NavController, consultations: Li
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(consultation.second, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(consultation.second, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 Text("${consultation.first}, ${consultation.third}", fontSize = 14.sp, color = Color.Gray)
             }
         }
