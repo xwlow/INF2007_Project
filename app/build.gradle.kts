@@ -143,5 +143,6 @@ dependencies {
 
         implementation ("androidx.health.connect:connect-client:1.1.0-alpha12")
         implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
+        implementation ("io.coil-kt:coil-compose:2.2.2")
     }
 }

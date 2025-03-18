@@ -86,6 +86,7 @@ data class Consultation(
 @Composable
 fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel) {
     val authState = authViewModel.authState.observeAsState()
+    var username = remember { mutableStateOf("0") }
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     val consultations = remember { mutableStateListOf<Triple<String, String, String>>() }
@@ -95,24 +96,34 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
     val caloriesData = remember { mutableStateOf("0") } // Store fetched calories data
     val distData = remember { mutableStateOf("0") } // Store fetched distance
     var refreshTrigger by remember { mutableIntStateOf(0) } // Refresh trigger state
+    val currentUser = FirebaseAuth.getInstance().currentUser?.uid
 
     LaunchedEffect(refreshTrigger) {
-        // Get the current user ID
-        val currentUser = FirebaseAuth.getInstance().currentUser?.uid
+        val consultationsResult = firestore.collection("consultations").get().await()
+        for (doc in consultationsResult.documents) {
+            val docUserId = doc.getString("userId")
+            if (docUserId == currentUser) {
+                Log.d("FirestoreDebug", "Doc ID: ${doc.id}, userId: $docUserId")
+            }
+        }
 
         if (currentUser != null) {
             // Fetch documents where user_id matches the current user ID
             val consultationsResult = firestore.collection("consultations")
-                .whereEqualTo("user_id", currentUser) // Filter by user_id
+                .whereEqualTo("userId", currentUser) // Filter by user_id
                 .get()
                 .await()
 
+
+            Log.d("FirestoreDebug", "Raw Firestore Result: $consultationsResult")
+            Log.d("FirestoreDebug", "Document Count: ${consultationsResult.size()}")
+
             // Clear and populate the documents list
             consultations.clear()
-            consultations.addAll(consultationsResult.documents.mapNotNull { consultations ->
-                val title = consultations.getString("title")
-                val lastUpdated = consultations.getString("lastUpdated")
-                val id = consultations.id
+            consultations.addAll(consultationsResult.documents.mapNotNull { doc ->
+                val title = doc.getString("clinicName") ?: "No Title" // Default value if null
+                val lastUpdated = doc.getString("chosenTime") ?: "No Date" // Default value if null
+                val id = doc.getString("selectedDate") ?: "No Date"
                 if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
             })
 
@@ -120,7 +131,30 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
         } else {
             Log.e("FirestoreDebug", "No user is currently logged in!")
         }
+    }
 
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            try {
+                val userDoc = firestore.collection("userDetail")
+                    .whereEqualTo("uid", currentUser) // Corrected filter
+                    .get()
+                    .await()
+
+                if (!userDoc.isEmpty) {
+                    val name = userDoc.documents[0].getString("name") ?: "Unknown"
+                    username.value = name
+                } else {
+                    Log.e("FirestoreDebug", "No matching user found.")
+                    username.value = "User not found"
+                }
+            } catch (e: Exception) {
+                Log.e("FirestoreDebug", "Error fetching username", e)
+                username.value = "Error"
+            }
+        } else {
+            username.value = "Not logged in"
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -177,7 +211,7 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
                         contentDescription = "Profile Image",
                         modifier = Modifier.size(48.dp).padding(end = 8.dp)
                     )
-                    Text("Hello!\nTan Kah Kee", fontSize = 24.sp)
+                    Text("Hello!\n ${username.value}", fontSize = 24.sp)
                 }
                 Row {
                     IconButton(onClick = { /* Search Action */ }) {
@@ -215,7 +249,6 @@ fun VitalsGrid(heartRate: String, steps: String, calories: String, dist: String)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             VitalCard(label = "Calories", value = calories, unit = "kcal")
             VitalCard(label = "Distance", value = dist, unit = "m")
