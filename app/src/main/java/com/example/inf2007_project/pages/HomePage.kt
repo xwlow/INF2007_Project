@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.DistanceRecord
@@ -72,6 +73,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import retrofit2.http.Query
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 
 
@@ -83,6 +86,12 @@ data class Consultation(
     val time: String
 )
 
+data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
 
 @Composable
 fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel) {
@@ -90,7 +99,8 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
     var username = remember { mutableStateOf("0") }
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
-    val consultations = remember { mutableStateListOf<Triple<String, String, String>>() }
+//    val consultations = remember { mutableStateListOf<Triple<String, String, String>>() }
+    val consultations = remember { mutableStateListOf<Quadruple<String, String, String, String>>() }
     val healthConnectClient = HealthConnectClient.getOrCreate(context)
     val heartRateData = remember { mutableStateOf("0") } // To store fetched heart rate data
     val stepsData = remember { mutableStateOf("0") } // Store fetched steps data
@@ -112,6 +122,8 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
             // Fetch documents where user_id matches the current user ID
             val consultationsResult = firestore.collection("consultations")
                 .whereEqualTo("userId", currentUser) // Filter by user_id
+//                .orderBy("selectedDate")
+                .limit(2)
                 .get()
                 .await()
 
@@ -121,14 +133,22 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
 
             // Clear and populate the documents list
             consultations.clear()
-            consultations.addAll(consultationsResult.documents.mapNotNull { doc ->
+            val allConsultations = consultations.addAll(consultationsResult.documents.mapNotNull { doc ->
                 val title = doc.getString("clinicName") ?: "No Title" // Default value if null
                 val lastUpdated = doc.getString("chosenTime") ?: "No Date" // Default value if null
                 val id = doc.getString("selectedDate") ?: "No Date"
-                if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
-            })
+                val dependencyId = doc.getString("dependencyId") ?: "No dependency" // DependencyID to link to userDetail
 
-            Log.d("FirestoreDebug", "Documents retrieved: $consultations")
+                val userDetailsDoc = firestore.collection("userDetail")
+                    .document(dependencyId) // Find the user where uid == dependencyId
+                    .get()
+                    .await()
+
+                val userName = userDetailsDoc.getString("name") ?: "Unknown User"
+
+                if (title != null && lastUpdated != null) Quadruple(id, title, lastUpdated, userName) else null
+            })
+                Log.d("FirestoreDebug", "Documents retrieved: $consultations")
         } else {
             Log.e("FirestoreDebug", "No user is currently logged in!")
         }
@@ -285,7 +305,7 @@ fun VitalCard(label: String, value: String, unit: String) {
 
 
 @Composable
-fun UpcomingConsultationsSection(navController: NavController, consultations: List<Triple<String, String, String>>) {
+fun UpcomingConsultationsSection(navController: NavController, consultations: List<Quadruple<String, String, String, String>>) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -307,9 +327,36 @@ fun UpcomingConsultationsSection(navController: NavController, consultations: Li
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(consultation.second, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text("${consultation.first}, ${consultation.third}", fontSize = 14.sp, color = Color.Gray)
+            Row() {
+                Image(
+                    painter = painterResource(id = R.drawable.sit_punggol),
+                    contentDescription = "Clinic Image",
+                    modifier = Modifier
+                        .size(
+                            width = 100.dp,
+                            height = 150.dp
+                        ), // Set custom width and height
+                    contentScale = ContentScale.Crop // Ensure the image is cropped to fit the specified size
+                )
+
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        consultation.second,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        "Consultations for: ${consultation.fourth}",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        "${consultation.first}, ${consultation.third}",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
     }
