@@ -122,18 +122,18 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
             // Fetch documents where user_id matches the current user ID
             val consultationsResult = firestore.collection("consultations")
                 .whereEqualTo("userId", currentUser) // Filter by user_id
-//                .orderBy("selectedDate")
-                .limit(2)
                 .get()
                 .await()
 
+            val dateFormatter = DateTimeFormatter.ofPattern("d/M/yyyy")
+            val currentDate = LocalDate.now()
 
             Log.d("FirestoreDebug", "Raw Firestore Result: $consultationsResult")
             Log.d("FirestoreDebug", "Document Count: ${consultationsResult.size()}")
 
             // Clear and populate the documents list
             consultations.clear()
-            val allConsultations = consultations.addAll(consultationsResult.documents.mapNotNull { doc ->
+            consultations.addAll(consultationsResult.documents.mapNotNull { doc ->
                 val title = doc.getString("clinicName") ?: "No Title" // Default value if null
                 val lastUpdated = doc.getString("chosenTime") ?: "No Date" // Default value if null
                 val id = doc.getString("selectedDate") ?: "No Date"
@@ -146,9 +146,37 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
 
                 val userName = userDetailsDoc.getString("name") ?: "Unknown User"
 
-                if (title != null && lastUpdated != null) Quadruple(id, title, lastUpdated, userName) else null
+                try {
+                    val selectedDate = LocalDate.parse(id, dateFormatter)
+                    // Include only future dates
+                    if (selectedDate.isAfter(currentDate)) {
+                        Quadruple(id, title, lastUpdated, userName)
+                    } else {
+                        null
+                    }
+                } catch (e: Exception) {
+                    Log.e("FirestoreDebug", "Error parsing date: $id", e)
+                    null // Skip invalid dates
+                }
+
+//                if (title != null && lastUpdated != null) Quadruple(id, title, lastUpdated, userName) else null
             })
-                Log.d("FirestoreDebug", "Documents retrieved: $consultations")
+
+            // Sort by selectedDate (ascending)
+            consultations.sortBy {
+                try {
+                    LocalDate.parse(it.first, dateFormatter) // Convert to LocalDate
+                } catch (e: Exception) {
+                    LocalDate.MIN // If parsing fails, set it as the earliest possible date
+                }
+            }
+
+            // Limit to 2 results
+            if (consultations.size > 2) {
+                consultations.subList(2, consultations.size).clear()
+            }
+
+            Log.d("FirestoreDebug", "Documents retrieved: $consultations")
         } else {
             Log.e("FirestoreDebug", "No user is currently logged in!")
         }
