@@ -439,7 +439,8 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Sample image
             Image(
@@ -460,7 +461,7 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
                     text = place.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier
                     .height(4.dp)
@@ -474,22 +475,24 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
                 Text(
                     text = "Rating: ${place.rating}",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
 
             // Bookmark Button
             IconButton(
                 onClick = {
                     nearbySearchViewModel.toggleBookmark(place)
-                }
+                },
+                modifier = Modifier.padding(end = 8.dp)
             ) {
                 Icon(
                     imageVector = if (isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Bookmark",
                     tint = if (isBookmarked) Color(0xFFFFD700) else Color.Gray,
-                    modifier = Modifier
-                        .offset(x= 12.dp)
+//                    modifier = Modifier
+//                        .offset(x= 12.dp)
                 )
             }
         }
