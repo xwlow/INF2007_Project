@@ -1,4 +1,4 @@
-package com.example.inf2007_project.clinic
+package com.example.inf2007_project.clinicList
 
 import Place
 import android.annotation.SuppressLint
@@ -65,7 +65,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.inf2007_project.R
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -75,7 +74,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
-fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel, nearbySearchViewModel: NearbySearchViewModel) {
+fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, nearbySearchViewModel: NearbySearchViewModel) {
     val keyword = "clinic"
     var radius by remember { mutableStateOf(500) }
     val apiKey = "AIzaSyDZ7GHGvGgfAcldVbm8-zrM4Fghsds89CA"

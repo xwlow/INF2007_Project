@@ -1,16 +1,11 @@
-package com.example.inf2007_project.clinic
+package com.example.inf2007_project.booking
 
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.inf2007_project.uam.DependencyData
-import com.example.inf2007_project.uam.UserDetailData
+import com.example.inf2007_project.dependencies.DependencyData
+import com.example.inf2007_project.dependencies.UserDetailData
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.components.Dependency
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.QuerySnapshot

@@ -24,11 +24,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.inf2007_project.uam.AuthState
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.pages.BottomNavigationBar
 
 @Composable
-fun ClinicsPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
+fun ClinicsPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     var testField by remember {

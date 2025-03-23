@@ -1,4 +1,4 @@
-package com.example.inf2007_project.clinic
+package com.example.inf2007_project.booking
 
 import android.net.Uri
 import android.util.Log
@@ -45,20 +45,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.inf2007_project.pages.BottomNavigationBar
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.uam.DependencyData
-import com.example.inf2007_project.uam.UserDetailData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ThumbUp
@@ -52,12 +53,11 @@ import androidx.navigation.NavController
 import com.example.inf2007_project.R
 import com.example.inf2007_project.uam.AuthState
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
-import com.example.inf2007_project.testData
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.DistanceRecord
@@ -71,6 +71,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import retrofit2.http.Query
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 
 
@@ -82,45 +84,124 @@ data class Consultation(
     val time: String
 )
 
+data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
 
 @Composable
-fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel) {
+fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, ) {
     val authState = authViewModel.authState.observeAsState()
+    var username = remember { mutableStateOf("0") }
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
-    val consultations = remember { mutableStateListOf<Triple<String, String, String>>() }
+//    val consultations = remember { mutableStateListOf<Triple<String, String, String>>() }
+    val consultations = remember { mutableStateListOf<Quadruple<String, String, String, String>>() }
     val healthConnectClient = HealthConnectClient.getOrCreate(context)
     val heartRateData = remember { mutableStateOf("0") } // To store fetched heart rate data
     val stepsData = remember { mutableStateOf("0") } // Store fetched steps data
     val caloriesData = remember { mutableStateOf("0") } // Store fetched calories data
     val distData = remember { mutableStateOf("0") } // Store fetched distance
     var refreshTrigger by remember { mutableIntStateOf(0) } // Refresh trigger state
+    val currentUser = FirebaseAuth.getInstance().currentUser?.uid
 
     LaunchedEffect(refreshTrigger) {
-        // Get the current user ID
-        val currentUser = FirebaseAuth.getInstance().currentUser?.uid
+        val consultationsResult = firestore.collection("consultations").get().await()
+        for (doc in consultationsResult.documents) {
+            val docUserId = doc.getString("userId")
+            if (docUserId == currentUser) {
+                Log.d("FirestoreDebug", "Doc ID: ${doc.id}, userId: $docUserId")
+            }
+        }
 
         if (currentUser != null) {
             // Fetch documents where user_id matches the current user ID
             val consultationsResult = firestore.collection("consultations")
-                .whereEqualTo("user_id", currentUser) // Filter by user_id
+                .whereEqualTo("userId", currentUser) // Filter by user_id
                 .get()
                 .await()
 
+            val dateFormatter = DateTimeFormatter.ofPattern("d/M/yyyy")
+            val currentDate = LocalDate.now()
+
+            Log.d("FirestoreDebug", "Raw Firestore Result: $consultationsResult")
+            Log.d("FirestoreDebug", "Document Count: ${consultationsResult.size()}")
+
             // Clear and populate the documents list
             consultations.clear()
-            consultations.addAll(consultationsResult.documents.mapNotNull { consultations ->
-                val title = consultations.getString("title")
-                val lastUpdated = consultations.getString("lastUpdated")
-                val id = consultations.id
-                if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
+            consultations.addAll(consultationsResult.documents.mapNotNull { doc ->
+                val title = doc.getString("clinicName") ?: "No Title" // Default value if null
+                val lastUpdated = doc.getString("chosenTime") ?: "No Date" // Default value if null
+                val id = doc.getString("selectedDate") ?: "No Date"
+                val dependencyId = doc.getString("dependencyId") ?: "No dependency" // DependencyID to link to userDetail
+
+                val userDetailsDoc = firestore.collection("userDetail")
+                    .document(dependencyId) // Find the user where uid == dependencyId
+                    .get()
+                    .await()
+
+                val userName = userDetailsDoc.getString("name") ?: "Unknown User"
+
+                try {
+                    val selectedDate = LocalDate.parse(id, dateFormatter)
+                    // Include only future dates
+                    if (selectedDate.isAfter(currentDate)) {
+                        Quadruple(id, title, lastUpdated, userName)
+                    } else {
+                        null
+                    }
+                } catch (e: Exception) {
+                    Log.e("FirestoreDebug", "Error parsing date: $id", e)
+                    null // Skip invalid dates
+                }
+
+//                if (title != null && lastUpdated != null) Quadruple(id, title, lastUpdated, userName) else null
             })
+
+            // Sort by selectedDate (ascending)
+            consultations.sortBy {
+                try {
+                    LocalDate.parse(it.first, dateFormatter) // Convert to LocalDate
+                } catch (e: Exception) {
+                    LocalDate.MIN // If parsing fails, set it as the earliest possible date
+                }
+            }
+
+            // Limit to 2 results
+            if (consultations.size > 2) {
+                consultations.subList(2, consultations.size).clear()
+            }
 
             Log.d("FirestoreDebug", "Documents retrieved: $consultations")
         } else {
             Log.e("FirestoreDebug", "No user is currently logged in!")
         }
+    }
 
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            try {
+                val userDoc = firestore.collection("userDetail")
+                    .whereEqualTo("uid", currentUser) // Corrected filter
+                    .get()
+                    .await()
+
+                if (!userDoc.isEmpty) {
+                    val name = userDoc.documents[0].getString("name") ?: "Unknown"
+                    username.value = name
+                } else {
+                    Log.e("FirestoreDebug", "No matching user found.")
+                    username.value = "User not found"
+                }
+            } catch (e: Exception) {
+                Log.e("FirestoreDebug", "Error fetching username", e)
+                username.value = "Error"
+            }
+        } else {
+            username.value = "Not logged in"
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -177,14 +258,14 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
                         contentDescription = "Profile Image",
                         modifier = Modifier.size(48.dp).padding(end = 8.dp)
                     )
-                    Text("Hello!\nTan Kah Kee", fontSize = 24.sp)
+                    Text("Hello!\n ${username.value}", fontSize = 24.sp)
                 }
                 Row {
-                    IconButton(onClick = { /* Search Action */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
-                    }
-                    IconButton(onClick = { /* Assistant Action */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Assistant")
+//                    IconButton(onClick = { /* Search Action */ }) {
+//                        Icon(Icons.Default.Search, contentDescription = "Search")
+//                    }
+                    IconButton(onClick = {navController.navigate("chatbot")}) {
+                        Icon(Icons.Default.Face, contentDescription = "Assistant")
                     }
                 }
             }
@@ -215,7 +296,6 @@ fun VitalsGrid(heartRate: String, steps: String, calories: String, dist: String)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             VitalCard(label = "Calories", value = calories, unit = "kcal")
             VitalCard(label = "Distance", value = dist, unit = "m")
@@ -251,7 +331,7 @@ fun VitalCard(label: String, value: String, unit: String) {
 
 
 @Composable
-fun UpcomingConsultationsSection(navController: NavController, consultations: List<Triple<String, String, String>>) {
+fun UpcomingConsultationsSection(navController: NavController, consultations: List<Quadruple<String, String, String, String>>) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -273,9 +353,36 @@ fun UpcomingConsultationsSection(navController: NavController, consultations: Li
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(consultation.second, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("${consultation.first}, ${consultation.third}", fontSize = 14.sp, color = Color.Gray)
+            Row() {
+                Image(
+                    painter = painterResource(id = R.drawable.sit_punggol),
+                    contentDescription = "Clinic Image",
+                    modifier = Modifier
+                        .size(
+                            width = 100.dp,
+                            height = 150.dp
+                        ), // Set custom width and height
+                    contentScale = ContentScale.Crop // Ensure the image is cropped to fit the specified size
+                )
+
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        consultation.second,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        "Consultations for: ${consultation.fourth}",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        "${consultation.first}, ${consultation.third}",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
     }

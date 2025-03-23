@@ -10,19 +10,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.example.inf2007_project.clinic.BookPage
-import com.example.inf2007_project.clinic.BookViewModel
+import com.example.inf2007_project.booking.BookPage
+import com.example.inf2007_project.booking.BookViewModel
 import com.example.inf2007_project.chatbot.ChatBotScreen
-import com.example.inf2007_project.clinic.Booking
+import com.example.inf2007_project.booking.Booking
 import com.example.inf2007_project.clinic.ClinicsDetail
 import com.example.inf2007_project.clinic.ClinicsPage
-import com.example.inf2007_project.clinic.ClinicsPageTest
-import com.example.inf2007_project.clinic.NearbySearchViewModel
+import com.example.inf2007_project.clinicList.ClinicsPageTest
+import com.example.inf2007_project.clinicList.NearbySearchViewModel
 import com.example.inf2007_project.consultation.ConsultationsPage
 import com.example.inf2007_project.message.ContactTest
 import com.example.inf2007_project.notes.DetailPage
@@ -33,17 +31,18 @@ import com.example.inf2007_project.notes.NotesRemindersPage
 import com.example.inf2007_project.uam.ProfilePage
 import com.example.inf2007_project.clinic.QueuePage
 import com.example.inf2007_project.clinic.QueueViewModel
-import com.example.inf2007_project.clinic.SuccessBooking
+import com.example.inf2007_project.clinicList.SuccessBooking
 import com.example.inf2007_project.consultation.ConsultationsPage2
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.uam.DependenciesPage
+import com.example.inf2007_project.dependencies.DependenciesPage
 import com.example.inf2007_project.uam.SignupPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, testViewModel: TestViewModel,
+fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel,
                nearbySearchViewModel: NearbySearchViewModel, queueViewModel: QueueViewModel,
-               bookViewModel: BookViewModel){
+               bookViewModel: BookViewModel
+){
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login", builder =  {
@@ -55,13 +54,13 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
         composable("home"){
 
-            HomePage(modifier, navController, authViewModel, testViewModel)
+            HomePage(modifier, navController, authViewModel)
         }
         composable("clinicsTest"){
-            ClinicsPage(modifier, navController, authViewModel, testViewModel)
+            ClinicsPage(modifier, navController, authViewModel)
         }
         composable("notes&reminders"){
-            NotesRemindersPage(modifier, navController, authViewModel, testViewModel)
+            NotesRemindersPage(modifier, navController, authViewModel)
         }
         composable("messages/{recipientId}"){ backStackEntry ->
             val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
@@ -81,14 +80,14 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
             )
         }
         composable("clinics"){
-            ClinicsPageTest(modifier, navController, authViewModel, testViewModel, nearbySearchViewModel)
+            ClinicsPageTest(modifier, navController, authViewModel, nearbySearchViewModel)
         }
 
         // Single pages for the notes & documents
         composable("detail/{type}/{id}") { navBackStackEntry ->
             val type = navBackStackEntry.arguments?.getString("type") ?: "notes"
             val id = navBackStackEntry.arguments?.getString("id") ?: ""
-            DetailPage(modifier, navController, authViewModel, testViewModel,type = type, id = id)
+            DetailPage(modifier, navController, authViewModel, type = type, id = id)
         }
 
         // Single pages for the clinics
@@ -146,12 +145,12 @@ fun Navigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, test
         }
 
         composable("contacts"){
-            ContactTest(modifier, navController, authViewModel, testViewModel)
+            ContactTest(modifier, navController, authViewModel)
         }
 
 
         composable("consultations"){
-            ConsultationsPage(modifier, navController, authViewModel, testViewModel)
+            ConsultationsPage(modifier, navController, authViewModel)
         }
 
         composable("consultations2"){

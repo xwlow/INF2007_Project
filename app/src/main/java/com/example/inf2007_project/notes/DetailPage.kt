@@ -27,13 +27,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun DetailPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel, type: String, id: String){
+fun DetailPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, type: String, id: String){
     val firestore = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     var title by remember { mutableStateOf("") }

@@ -1,7 +1,9 @@
-package com.example.inf2007_project.clinic
+package com.example.inf2007_project.clinicList
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.inf2007_project.clinic.ApiResponse
+import com.example.inf2007_project.clinic.ClinicResponseModels
 //import com.example.inf2007_project.model.ApiResponse
 //import com.example.inf2007_project.model.Clinic
 import retrofit2.Call
