@@ -17,13 +17,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
 import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
-fun ContactTest(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel) {
+fun ContactTest(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel) {
     //val db = FirebaseFirestore.getInstance()
     //val auth = FirebaseAuth.getInstance()
     val authState = authViewModel.authState.observeAsState()

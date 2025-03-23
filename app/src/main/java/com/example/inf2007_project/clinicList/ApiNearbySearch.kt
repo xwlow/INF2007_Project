@@ -1,4 +1,4 @@
-package com.example.inf2007_project.clinic
+package com.example.inf2007_project.clinicList
 
 import NearbySearchResponse
 import retrofit2.http.GET

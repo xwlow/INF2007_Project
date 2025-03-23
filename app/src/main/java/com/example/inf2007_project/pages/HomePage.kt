@@ -53,8 +53,6 @@ import androidx.navigation.NavController
 import com.example.inf2007_project.R
 import com.example.inf2007_project.uam.AuthState
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
-import com.example.inf2007_project.testData
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableIntStateOf
@@ -94,7 +92,7 @@ data class Quadruple<A, B, C, D>(
 )
 
 @Composable
-fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel) {
+fun HomePage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, ) {
     val authState = authViewModel.authState.observeAsState()
     var username = remember { mutableStateOf("0") }
     val firestore = FirebaseFirestore.getInstance()

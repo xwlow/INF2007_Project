@@ -52,7 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.inf2007_project.uam.AuthViewModel
-import com.example.inf2007_project.TestViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -62,7 +61,7 @@ import com.example.inf2007_project.pages.BottomNavigationBar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel, testViewModel: TestViewModel){
+fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()

@@ -1,6 +1,5 @@
 package com.example.inf2007_project
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -11,8 +10,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,8 +23,8 @@ import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
-import com.example.inf2007_project.clinic.BookViewModel
-import com.example.inf2007_project.clinic.NearbySearchViewModel
+import com.example.inf2007_project.booking.BookViewModel
+import com.example.inf2007_project.clinicList.NearbySearchViewModel
 import com.example.inf2007_project.clinic.QueueViewModel
 import com.example.inf2007_project.uam.AuthViewModel
 import com.example.inf2007_project.ui.theme.INF2007_ProjectTheme
@@ -47,7 +44,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val authViewModel: AuthViewModel by viewModels()
-        val testViewModel: TestViewModel by viewModels()
         val nearbySearchViewModel: NearbySearchViewModel by viewModels()
         val queueViewModel: QueueViewModel by viewModels()
         val bookViewModel: BookViewModel by viewModels()
@@ -58,7 +54,6 @@ class MainActivity : ComponentActivity() {
                     Navigation(
                         modifier = Modifier.padding(innerPadding),
                         authViewModel = authViewModel,
-                        testViewModel = testViewModel,
                         nearbySearchViewModel = nearbySearchViewModel,
                         queueViewModel = queueViewModel,
                         bookViewModel = bookViewModel
