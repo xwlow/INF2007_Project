@@ -83,6 +83,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
+            if (userType == "Caregiver") {
                 Button(
                     onClick = { isAddingNew = true },
                     modifier = Modifier.fillMaxWidth()
@@ -90,11 +91,12 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                     Text("Add Dependency")
                 }
                 Spacer(modifier = Modifier.height(24.dp))
+            }
 
             dependenciesWithDetails
                 .filter {
                     (it.first.dependencyId != userId && userType == "Caregiver") ||
-                            (it.first.caregiverId != userId && userType == "Dependency")
+                            (it.first.caregiverId != userId && userType == "User")
                 }
                 .forEachIndexed { index, (dependency, userDetails) ->
                     DependencyDisplay(
@@ -104,7 +106,9 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                         dependencyNumber = index + 1,
                         onEdit = { selectedDependency = dependency },
                         navController,
-                        userType = userType
+                        userType = userType,
+                        bookViewModel,
+                        userId.toString()
                     )
                 }
         }
@@ -151,7 +155,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
 
 // display dep information
 @Composable
-fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController, userType: String?) {
+fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, dependencyNumber: Int, onEdit: () -> Unit, navController: NavController, userType: String?, bookViewModel: BookViewModel, userId: String) {
     //val messageIcon = Icons.Filled.MailOutline
     val firestore = FirebaseFirestore.getInstance()
     var showDialog by remember { mutableStateOf(false) }
@@ -233,7 +237,7 @@ fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, d
                         text = { Text("Are you sure you want to delete this dependency? This action cannot be undone.") },
                         confirmButton = {
                             TextButton(onClick = {
-                                dependency.documentId?.let { deleteDependencyFromFirestore(it, firestore) }
+                                dependency.documentId?.let { deleteDependencyFromFirestore(it, firestore, bookViewModel, userId) }
                                 Log.d("Delete Dependency", "DependencyId: ${dependency.dependencyId}")
                                 showDialog = false
                             }) {
@@ -551,11 +555,12 @@ fun DependencyEditDialog(
 //}
 
 // firebase delete dep
-fun deleteDependencyFromFirestore(documentId: String, firestore: FirebaseFirestore) {
+fun deleteDependencyFromFirestore(documentId: String, firestore: FirebaseFirestore, bookViewModel: BookViewModel, userId: String) {
     firestore.collection("dependencies").document(documentId)
         .delete()
         .addOnSuccessListener {
             Log.d("Delete Dependency", "Deleted dependency with id: $documentId")
+            bookViewModel.fetchDependenciesWithDetails(userId)
         }
         .addOnFailureListener { e ->
             Log.e("Delete Dependency Error", "Failed to delete: ${e.message}")
@@ -608,7 +613,7 @@ fun addDependencyToFirestore(
 
                                     // updated data for dependant & caregiver
                                     bookViewModel.fetchDependenciesWithDetails(userId)
-                                    bookViewModel.fetchDependenciesWithDetails(dependency.dependencyId!!)
+                                    //bookViewModel.fetchDependenciesWithDetails(dependency.dependencyId!!)
                                 }
                                 .addOnFailureListener { e ->
                                     Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -426,29 +427,31 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .heightIn(min = 120.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .heightIn(min = 180.dp)
             .clickable {
                 val encodedClinicInfo =
                     Uri.encode("${place.name}|${place.vicinity}|${place.place_id}")
                 navController.navigate("clinic/$encodedClinicInfo")
             },
-        shape = RoundedCornerShape(12.dp), // Slightly rounded corners
+        shape = RoundedCornerShape(16.dp), // Slightly rounded corners
         elevation = CardDefaults.elevatedCardElevation(4.dp) // Adds shadow effect
     ) {
-        Row {
-
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             // Sample image
             Image(
                 painter = painterResource(id = R.drawable.sit_punggol),
                 contentDescription = "Clinic Image",
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(72.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
@@ -459,7 +462,10 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier
+                    .height(4.dp)
+                    .padding(top = 20.dp)
+                )
                 Text(
                     text = place.vicinity,
                     fontSize = 14.sp,
@@ -481,7 +487,9 @@ fun ClinicCard(place: Place, navController: NavController, nearbySearchViewModel
                 Icon(
                     imageVector = if (isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Bookmark",
-                    tint = if (isBookmarked) Color(0xFFFFD700) else Color.Gray
+                    tint = if (isBookmarked) Color(0xFFFFD700) else Color.Gray,
+                    modifier = Modifier
+                        .offset(x= 12.dp)
                 )
             }
         }
