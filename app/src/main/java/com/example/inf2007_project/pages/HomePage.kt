@@ -310,7 +310,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
         BottomNavItem("Dependency", Icons.Filled.Call, "dependencies"),
 
-        BottomNavItem("Consultations", Icons.Filled.ThumbUp, "consultations2"),
+        //BottomNavItem("Consultations", Icons.Filled.ThumbUp, "consultations2"),
 
         BottomNavItem("Profile", Icons.Filled.Person, "profile")
     )

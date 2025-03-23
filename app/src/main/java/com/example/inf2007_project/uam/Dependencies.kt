@@ -66,11 +66,11 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
         topBar = {
             TopAppBar(
                 title = { Text("Manage Dependencies") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+//                    }
+//                }
             )
         },
         bottomBar = {
