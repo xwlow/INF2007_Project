@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
@@ -413,8 +415,8 @@ private suspend fun getConsultations(userId: String, onResult: (List<Consultatio
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
-        BottomNavItem("Clinics", Icons.Filled.ThumbUp, "clinics"),
-        BottomNavItem("Notes", Icons.Filled.ThumbUp, "notes&reminders"),
+        BottomNavItem("Clinics", Icons.Default.LocationOn, "clinics"),
+        BottomNavItem("Notes", Icons.Filled.Menu, "notes&reminders"),
         BottomNavItem("Dependency", Icons.Filled.Call, "dependencies"),
 
         //BottomNavItem("Consultations", Icons.Filled.ThumbUp, "consultations2"),

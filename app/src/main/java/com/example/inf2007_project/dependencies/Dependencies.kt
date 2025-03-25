@@ -122,7 +122,9 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                 onDismiss = { selectedDependency = null },
                 onSave = { updatedDependency ->
                     // Call function to update only the relationship field
-                    updateDependencyRelationship(selectedDependency!!.documentId!!, updatedDependency.relationship, firestore)
+                    if (userId != null) {
+                        updateDependencyRelationship(selectedDependency!!.documentId!!, updatedDependency.relationship, firestore, context, userId, bookViewModel)
+                    }
 
                     // Update only the relationship field in the local state
                     dependencies = dependencies.map {
@@ -631,11 +633,13 @@ fun addDependencyToFirestore(
         }
 }
 
-fun updateDependencyRelationship(documentId: String, newRelationship: String, firestore: FirebaseFirestore) {
+fun updateDependencyRelationship(documentId: String, newRelationship: String, firestore: FirebaseFirestore, context: Context, userId: String, bookViewModel: BookViewModel) {
     firestore.collection("dependencies").document(documentId)
         .update("relationship", newRelationship)
         .addOnSuccessListener {
             Log.d("Update Dependency", "Relationship with $documentId updated successfully to: $newRelationship")
+            bookViewModel.fetchDependenciesWithDetails(userId)
+            Toast.makeText(context, "Successfully Updated Relationship", Toast.LENGTH_SHORT).show()
         }
         .addOnFailureListener { e ->
             Log.e("Update Dependency Error", "Failed to update relationship: ${e.message}")
