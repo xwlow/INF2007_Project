@@ -43,61 +43,58 @@ fun Messaging(
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
-        Log.d("RecipientID", dependencyId)
-        currentUser?.uid?.let { Log.d("SenderID", it) }
-        db.collection("userDetail").document(dependencyId).get()
-            .addOnSuccessListener { document ->
-                recipientName = document.getString("name") ?: "Unknown"
-            }
-            .addOnFailureListener { e ->
-                Log.e("Firestore", "Error fetching recipient name", e)
-            }
+        if (dependencyId != null) {
+            Log.d("RecipientID", dependencyId)
+            currentUser?.uid?.let { Log.d("SenderID", it) }
+            db.collection("userDetail").document(dependencyId).get()
+                .addOnSuccessListener { document ->
+                    recipientName = document.getString("name") ?: "Unknown"
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error fetching recipient name", e)
+                }
 
-        val query1 = db.collection("messages")
-            .whereEqualTo("senderId", currentUser?.uid)
-            .whereEqualTo("recipientId", dependencyId)
-            .orderBy("timestamp")
+            val query1 = db.collection("messages")
+                .whereEqualTo("senderId", currentUser?.uid)
+                .whereEqualTo("recipientId", dependencyId)
+                .orderBy("timestamp")
 
-        val query2 = db.collection("messages")
-            .whereEqualTo("senderId", dependencyId)
-            .whereEqualTo("recipientId", currentUser?.uid)
-            .orderBy("timestamp")
+            val query2 = db.collection("messages")
+                .whereEqualTo("senderId", dependencyId)
+                .whereEqualTo("recipientId", currentUser?.uid)
+                .orderBy("timestamp")
 
-        query1.addSnapshotListener { snapshot1, e1 ->
-            query2.addSnapshotListener { snapshot2, e2 ->
-                if (e1 == null && e2 == null && snapshot1 != null && snapshot2 != null) {
-                    val messages1 = snapshot1.documents.mapNotNull { doc ->
-                        Message(
-                            message = doc.getString("message") ?: "",
-                            senderId = doc.getString("senderId") ?: "",
-                            recipientId = doc.getString("recipientId") ?: "",
-                            timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
-                        )
-                    }
+            query1.addSnapshotListener { snapshot1, e1 ->
+                query2.addSnapshotListener { snapshot2, e2 ->
+                    if (e1 == null && e2 == null && snapshot1 != null && snapshot2 != null) {
+                        val messages1 = snapshot1.documents.mapNotNull { doc ->
+                            Message(
+                                message = doc.getString("message") ?: "",
+                                senderId = doc.getString("senderId") ?: "",
+                                recipientId = doc.getString("recipientId") ?: "",
+                                timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
+                            )
+                        }
 
-                    val messages2 = snapshot2.documents.mapNotNull { doc ->
-                        Message(
-                            message = doc.getString("message") ?: "",
-                            senderId = doc.getString("senderId") ?: "",
-                            recipientId = doc.getString("recipientId") ?: "",
-                            timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
-                        )
-                    }
+                        val messages2 = snapshot2.documents.mapNotNull { doc ->
+                            Message(
+                                message = doc.getString("message") ?: "",
+                                senderId = doc.getString("senderId") ?: "",
+                                recipientId = doc.getString("recipientId") ?: "",
+                                timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
+                            )
+                        }
 
-                    // Combine and sort by timestamp
-                    messages = (messages1 + messages2).sortedBy { it.timestamp.toDate().time }
-                    messages.forEach {
-                        Log.d("MessageLog", "Message: ${it.message}, Timestamp: ${it.timestamp.toDate()}")
-                    }
-
-                    messages2.forEach {
-                        message -> sendMessageNotification(dependencyId, message)
+                        // Combine and sort by timestamp
+                        messages = (messages1 + messages2).sortedBy { it.timestamp.toDate().time }
+                        messages.forEach {
+                            Log.d("MessageLog", "Message: ${it.message}, Timestamp: ${it.timestamp.toDate()}")
+                        }
                     }
                 }
             }
         }
     }
-
 
     LaunchedEffect(messages) {
 //        Log.d("Autoscroll", "Messages updated: ${messages.size}")
@@ -186,26 +183,6 @@ fun Messaging(
             }
         }
     }
-
-
-}
-
-fun sendMessageNotification(senderId: String, message: Message) {
-    // You'll need to fetch sender's name
-    val db = FirebaseFirestore.getInstance()
-    db.collection("userDetail").document(senderId).get()
-        .addOnSuccessListener { document ->
-            val senderName = document.getString("name") ?: "Unknown Sender"
-
-            // Create and send notification
-            val notificationData = mapOf(
-                "title" to "New Message from $senderName",
-                "body" to message.message
-            )
-
-//                // You might want to send this to your server to trigger FCM
-//                sendFCMNotification(notificationData)
-        }
 }
 
 @Composable
@@ -233,8 +210,6 @@ fun MessageItem(message: Message, isCurrentUser: Boolean) {
         }
     }
 }
-
-
 
 data class Message(
     val message: String,
