@@ -363,7 +363,7 @@ class BookViewModel : ViewModel() {
                 )
             } ?: emptyList()
 
-            fetchUserDetailsForDependencies(caregiverDependencies, updatedList) {
+            fetchUserDetailsForDependencies(caregiverDependencies, updatedList, "Caregiver") {
                 dependencyQuery.addSnapshotListener { dependencySnapshot, e ->
                     if (e != null) {
                         Log.e("Firestore Error", "Failed to listen for dependency caregivers", e)
@@ -377,7 +377,7 @@ class BookViewModel : ViewModel() {
                         )
                     } ?: emptyList()
 
-                    fetchUserDetailsForDependencies(dependencyCaregivers, updatedList) {
+                    fetchUserDetailsForDependencies(dependencyCaregivers, updatedList, "User") {
                         _dependenciesWithDetails.value = updatedList.distinctBy { it.first.documentId }
                     }
                 }
@@ -388,6 +388,7 @@ class BookViewModel : ViewModel() {
     private fun fetchUserDetailsForDependencies(
         dependencies: List<DependencyData>,
         updatedList: MutableList<Pair<DependencyData, UserDetailData>>,
+        userType: String, // Add userType here
         onComplete: () -> Unit
     ) {
         if (dependencies.isEmpty()) {
@@ -398,29 +399,43 @@ class BookViewModel : ViewModel() {
         var fetchedCount = 0
 
         dependencies.forEach { dependency ->
-            val userId = dependency.dependencyId ?: dependency.caregiverId
+            // Choose userId based on userType
+            val userId = when (userType) {
+                "Caregiver" -> dependency.dependencyId // Caregiver sees dependency's details
+                "User" -> dependency.caregiverId // User sees caregiver's details
+                else -> dependency.dependencyId // Default fall-back
+            }
 
-            db.collection("userDetail").document(userId!!)
-                .get()
-                .addOnSuccessListener { userDoc ->
-                    val userDetails = userDoc.toObject(UserDetailData::class.java)
-                    if (userDetails != null) {
-                        updatedList.add(dependency to userDetails)
-                    }
+            if (userId != null) {
+                db.collection("userDetail").document(userId)
+                    .get()
+                    .addOnSuccessListener { userDoc ->
+                        val userDetails = userDoc.toObject(UserDetailData::class.java)
+                        if (userDetails != null) {
+                            updatedList.add(dependency to userDetails)
+                        }
 
-                    fetchedCount++
-                    if (fetchedCount == dependencies.size) {
-                        _dependenciesWithDetails.value = updatedList.distinctBy { it.first.documentId }
-                        onComplete()
+                        fetchedCount++
+                        if (fetchedCount == dependencies.size) {
+                            _dependenciesWithDetails.value = updatedList.distinctBy { it.first.documentId }
+                            onComplete()
+                        }
                     }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore Error", "Failed to fetch user details", e)
-                    fetchedCount++
-                    if (fetchedCount == dependencies.size) {
-                        onComplete()
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore Error", "Failed to fetch user details", e)
+                        fetchedCount++
+                        if (fetchedCount == dependencies.size) {
+                            onComplete()
+                        }
                     }
+            } else {
+                // If userId is null for some reason, increment fetchedCount
+                fetchedCount++
+                if (fetchedCount == dependencies.size) {
+                    onComplete()
                 }
+            }
         }
     }
+
 }

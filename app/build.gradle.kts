@@ -58,6 +58,8 @@ dependencies {
     implementation(libs.generativeai)
     implementation(libs.androidx.espresso.core)
     implementation(libs.play.services.auth)
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -133,6 +135,8 @@ dependencies {
         androidTestImplementation(libs.androidx.ui.test.junit4)
         debugImplementation(libs.androidx.ui.tooling)
         debugImplementation(libs.androidx.ui.test.manifest)
+        implementation("com.google.firebase:firebase-messaging-ktx:24.1.1")
+
 
         // Retrofit dependencies (Kotlin DSL syntax)
         implementation("com.squareup.retrofit2:retrofit:2.9.0") // Retrofit library
