@@ -1,6 +1,8 @@
 package com.example.inf2007_project.dependencies
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -8,11 +10,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -161,6 +165,15 @@ fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, d
     //val messageIcon = Icons.Filled.MailOutline
     val firestore = FirebaseFirestore.getInstance()
     var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val handleCall = {
+        userDetails.phone.let { phoneNumber ->
+            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+            context.startActivity(dialIntent)
+        }
+    }
+
 
     Card(
         modifier = Modifier
@@ -189,6 +202,17 @@ fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, d
                         text = "Caregiver $dependencyNumber",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f) // Push icons to the right
+                    )
+                }
+                // Call function
+                IconButton(
+                    onClick = handleCall,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Call, // You'll need to import this
+                        contentDescription = "Call Clinic",
+                        tint = Color.Black
                     )
                 }
 
