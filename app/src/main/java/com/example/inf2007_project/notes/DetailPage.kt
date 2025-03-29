@@ -80,16 +80,26 @@ fun DetailPage(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        //modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Note Details", style = MaterialTheme.typography.titleMedium) },
+                {
+                    Text(
+                        text = when(type.lowercase()) {
+                            "notes" -> "Notes Details"
+                            "documents" -> "Documents Details"
+                            else -> type.replaceFirstChar { it.uppercase() } // Capitalize the type as fallback
+                        },
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            //tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },

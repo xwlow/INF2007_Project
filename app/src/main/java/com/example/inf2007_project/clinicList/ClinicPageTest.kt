@@ -39,12 +39,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -74,6 +76,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, nearbySearchViewModel: NearbySearchViewModel) {
     val keyword = "clinic"
@@ -156,6 +159,11 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Clinics") }
+            )
+        },
         bottomBar = {
             BottomNavigationBar(navController)
         }
@@ -172,7 +180,7 @@ fun ClinicsPageTest(modifier: Modifier = Modifier, navController: NavController,
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Clinics", fontSize = 32.sp)
+
 
             Column (
                 modifier = Modifier

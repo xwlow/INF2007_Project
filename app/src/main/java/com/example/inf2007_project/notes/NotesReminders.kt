@@ -6,83 +6,49 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.inf2007_project.uam.AuthViewModel
+import com.example.inf2007_project.pages.BottomNavigationBar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import com.example.inf2007_project.pages.BottomNavigationBar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavController, authViewModel: AuthViewModel){
+fun NotesRemindersPage(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel) {
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
     val documents = remember { mutableStateListOf<Triple<String, String, String>>() }
     val notes = remember { mutableStateListOf<Triple<String, String, String>>() }
     var isDialogOpen by remember { mutableStateOf(false) }
-    var refreshTrigger by remember { mutableStateOf(0) } // Refresh trigger state
+    var refreshTrigger by remember { mutableStateOf(0) }
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(refreshTrigger) {
-        // Get the current user ID
         val currentUser = FirebaseAuth.getInstance().currentUser?.uid
-
         if (currentUser != null) {
-            // Fetch documents where user_id matches the current user ID
             val documentsResult = firestore.collection("documents")
-                .whereEqualTo("user_id", currentUser) // Filter by user_id
+                .whereEqualTo("user_id", currentUser)
                 .get()
                 .await()
-
-            // Clear and populate the documents list
             documents.clear()
             documents.addAll(documentsResult.documents.mapNotNull { doc ->
                 val title = doc.getString("title")
@@ -91,14 +57,10 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
                 if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
             })
 
-
-            //// NOTES ////
             val notesResult = firestore.collection("notes")
-                .whereEqualTo("user_id", currentUser) // Filter by user_id
+                .whereEqualTo("user_id", currentUser)
                 .get()
                 .await()
-
-            // Clear and populate the notes list
             notes.clear()
             notes.addAll(notesResult.documents.mapNotNull { doc ->
                 val title = doc.getString("title")
@@ -106,10 +68,6 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
                 val id = doc.id
                 if (title != null && lastUpdated != null) Triple(id, title, lastUpdated) else null
             })
-
-            Log.d("FirestoreDebug", "Documents retrieved: $documents")
-        } else {
-            Log.e("FirestoreDebug", "No user is currently logged in!")
         }
     }
 
@@ -134,31 +92,41 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController : NavControl
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-
             SectionHeader("Documents")
-            documents.forEach { (id, title, lastUpdated) ->
-                DocumentItem(title, "Last updated on $lastUpdated",id, navController = navController)
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                userScrollEnabled = true
+            ) {
+                items(documents, key = { it.first }) { (id, title, lastUpdated) ->
+                    DocumentItem(title, "Last updated on $lastUpdated", id, navController = navController)
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             SectionHeader("Notes")
             NotesTabs(selectedTabIndex) { newIndex -> selectedTabIndex = newIndex }
-            val sortedNotes = getSortedNotes(notes, selectedTabIndex)
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                userScrollEnabled = true
+            ) {
 
-            sortedNotes.forEach { (id, title, lastUpdated) ->
-                NoteItem(title, "Last updated on $lastUpdated", id, navController)
+                val sortedNotes = getSortedNotes(notes, selectedTabIndex)
+                items(sortedNotes, key = { it.first }) { (id, title, lastUpdated) ->
+                    NoteItem(title, "Last updated on $lastUpdated", id, navController)
+                }
             }
-
-            if (isDialogOpen) {
-                CardDialog(
-                    onDismiss = { isDialogOpen = false },
-                    onAddSuccess = { refreshTrigger++ }
-                )
-            }
+        }
+        if (isDialogOpen) {
+            CardDialog(
+                onDismiss = { isDialogOpen = false },
+                onAddSuccess = { refreshTrigger++ }
+            )
         }
     }
 }
+
+
+
+
+
 
 @Composable
 fun NotesTabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
@@ -199,7 +167,7 @@ fun DocumentItem(title: String, subtitle: String, id: String, navController: Nav
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { navController.navigate("detail/notes/$id") },
+            .clickable { navController.navigate("detail/documents/$id") },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -327,7 +295,7 @@ fun CardDialog(
                             Toast.makeText(context, "Error adding $selectedCategory: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                 },
-                modifier = Modifier.testTag("ConfirmButton")
+//                modifier = Modifier.testTag("ConfirmButton")
             ) {
                 Text("Add")
             }
@@ -335,7 +303,7 @@ fun CardDialog(
         dismissButton = {
             Button(
                 onClick = { onDismiss() },
-                modifier = Modifier.testTag("CancelButton")
+//                modifier = Modifier.testTag("CancelButton")
             ) {
                 Text("Cancel")
             }
@@ -348,7 +316,7 @@ fun CardDialog(
                     label = { Text("Write Something...") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("textInput")
+//                        .testTag("textInput")
                 )
                 TextField(
                     value = contentInput,
@@ -356,7 +324,7 @@ fun CardDialog(
                     label = { Text("Content goes here...") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("contentInput")
+//                        .testTag("contentInput")
                 )
 //                Text(
 //                    text = "Category: $selectedCategory",
@@ -398,7 +366,7 @@ fun CardDialog(
                         IconButton(
                             onClick = { expanded = !expanded },
                             modifier = Modifier
-                                .align(Alignment.Center)
+                                .align(Alignment.CenterEnd)
                                 .offset(x= 12.dp)
                         ) {
                             Icon(
@@ -408,7 +376,8 @@ fun CardDialog(
                         }
                         DropdownMenu(
                             expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth(0.5f)
                         ) {
                             categories.forEach { category ->
                                 DropdownMenuItem(
