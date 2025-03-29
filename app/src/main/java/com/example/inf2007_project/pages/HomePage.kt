@@ -75,6 +75,8 @@ import retrofit2.http.Query
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.ceil
 
 
@@ -119,11 +121,33 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
         }
 
         if (currentUser != null) {
-            // Fetch documents where user_id matches the current user ID
+
+            val dependencyIds = suspendCoroutine<List<String>> { cont ->
+                firestore.collection("dependencies")
+                    .whereEqualTo("caregiverId", currentUser)
+                    .get()
+                    .addOnSuccessListener { documents ->
+                        val ids = documents.mapNotNull { it.getString("dependencyId") }.toMutableList()
+                        ids.add(currentUser) // Include current user
+                        cont.resume(ids)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore Error", "Error getting dependencies", e)
+                        cont.resume(emptyList()) // Resume with empty list on failure
+                    }
+            }
+
             val consultationsResult = firestore.collection("consultations")
-                .whereEqualTo("userId", currentUser) // Filter by user_id
+                .whereIn("dependencyId", dependencyIds)
                 .get()
                 .await()
+
+//            // Fetch documents where user_id matches the current user ID
+//            val consultationsResult = firestore.collection("consultations")
+////                .whereEqualTo("userId", currentUser) // Filter by user_id
+//                .whereEqualTo("dependencyId", currentUser)
+//                .get()
+//                .await()
 
             val dateFormatter = DateTimeFormatter.ofPattern("d/M/yyyy")
             val currentDate = LocalDate.now()
@@ -149,7 +173,7 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
                 try {
                     val selectedDate = LocalDate.parse(id, dateFormatter)
                     // Include only future dates
-                    if (selectedDate.isAfter(currentDate)) {
+                    if (selectedDate.isAfter(currentDate) || selectedDate.isEqual(currentDate)) {
                         Quadruple(id, title, lastUpdated, userName)
                     } else {
                         null

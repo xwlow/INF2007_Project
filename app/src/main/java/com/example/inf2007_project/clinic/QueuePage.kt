@@ -170,7 +170,6 @@ fun QueuePage(
                         ) {
                             Text("Address:")
                             Text(clinicStreetName)
-                            Text("No postal code for this api sadly")
                         }
 
                         Card(

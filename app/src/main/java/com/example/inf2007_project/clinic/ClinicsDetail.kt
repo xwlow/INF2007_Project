@@ -104,7 +104,7 @@ fun ClinicsDetail(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(text = "Phone", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(text = clinicID)
+                    Text(text = "+65 6634 3132")
                 }
             }
 
