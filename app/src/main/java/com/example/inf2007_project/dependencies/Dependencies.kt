@@ -210,9 +210,9 @@ fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, d
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Call, // You'll need to import this
+                        imageVector = Icons.Filled.Call, // You'll need to import this
                         contentDescription = "Call Clinic",
-                        tint = Color.Black
+//                        tint = Color.White
                     )
                 }
 

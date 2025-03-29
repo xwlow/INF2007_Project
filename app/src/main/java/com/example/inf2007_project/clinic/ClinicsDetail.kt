@@ -1,5 +1,6 @@
 package com.example.inf2007_project.clinic
 
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.background
@@ -25,9 +26,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +54,20 @@ fun ClinicsDetail(
     val queueCount = viewModel.queueCount
     val checkQueueError = viewModel.checkQueueError
     val addQueueError = viewModel.addQueueError
+    val clinicNumber = "+65 6634 3132"
+    val context = LocalContext.current
+
+    val handleCall = {
+        clinicNumber.let { phoneNumber ->
+            if (phoneNumber.isNotBlank()) {
+                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+                context.startActivity(dialIntent)
+            } else {
+                Log.e("HandleCall", "Phone number is blank!")
+            }
+        }
+    }
+
 
 
     LaunchedEffect(clinicID) {
@@ -103,8 +121,9 @@ fun ClinicsDetail(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+
                     Text(text = "Phone", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(text = "+65 6634 3132")
+                    Text(text = clinicNumber)
                 }
             }
 
@@ -190,7 +209,7 @@ fun ClinicsDetail(
                     Text("Book an appointment")
                 }
                 Button(
-                    onClick = { /* Handle call the clinic */ },
+                    onClick = { handleCall() },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Call the clinic")
