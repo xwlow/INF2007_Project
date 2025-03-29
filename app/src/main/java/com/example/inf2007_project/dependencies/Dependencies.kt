@@ -66,7 +66,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Dependencies") },
+                title = { Text("Manage Dependents") },
 //                navigationIcon = {
 //                    IconButton(onClick = { navController.popBackStack() }) {
 //                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -92,7 +92,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                     onClick = { isAddingNew = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add Dependency")
+                    Text("Add Dependent")
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -119,7 +119,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
 
         // selected dep info & features
         if (selectedDependency != null) {
-            Log.d("Selected Dependency",  selectedDependency.toString())
+            Log.d("Selected Dependent",  selectedDependency.toString())
 
             DependencyEditDialog(
                 dependency = selectedDependency!!,
@@ -134,7 +134,7 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
                     dependencies = dependencies.map {
                         if (it.documentId == updatedDependency.documentId) it.copy(relationship = updatedDependency.relationship) else it
                     }
-                    Log.d("Update Dependency Test", "Updating relationship: ${updatedDependency.relationship}")
+                    Log.d("Update Dependent Test", "Updating relationship: ${updatedDependency.relationship}")
                     selectedDependency = null
                 },
 //                onDelete = {
@@ -193,7 +193,7 @@ fun DependencyDisplay(dependency: DependencyData, userDetails: UserDetailData, d
             ) {
                 if(userType == "Caregiver") {
                     Text(
-                        text = "Dependency $dependencyNumber",
+                        text = "Dependent $dependencyNumber",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f) // Push icons to the right
                     )
@@ -342,8 +342,6 @@ fun DependencyEditDialog(
     }
 
 
-
-
     fun searchUser() {
         isSearching = true
         searchError = false
@@ -368,11 +366,6 @@ fun DependencyEditDialog(
                         //searchError = true
                         searchedUser = null
                         dependencySelfCheck = true
-//                        Toast.makeText(
-//                            context,
-//                            "You cannot add yourself as a dependency!",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
                     } else if (!nric.matches(nricRegex)) {
                         nricCheck = true
                     } else {
@@ -456,15 +449,6 @@ fun DependencyEditDialog(
                 Button(onClick = { onDismiss() }) {
                     Text("Cancel")
                 }
-//                onDelete?.let {
-//                    Spacer(modifier = Modifier.width(8.dp))
-//                    Button(
-//                        onClick = { onDelete() },
-//                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
-//                    ) {
-//                        Text("Delete")
-//                    }
-//                }
             }
         },
         text = {
@@ -540,7 +524,6 @@ fun DependencyEditDialog(
                         onValueChange = {},
                         readOnly = true,
                         modifier = Modifier
-                            //.fillMaxWidth()
                             .clickable { mExpanded = true }
                             .onGloballyPositioned { coordinates -> mTextFieldSize = coordinates.size.toSize() },
                         label = { Text("Relationship") },
@@ -571,14 +554,6 @@ fun DependencyEditDialog(
 }
 
 // Below are the firebase code
-
-// firebase update
-//fun updateDependencyInFirestore(dependency: DependencyData, firestore: FirebaseFirestore) {
-//    dependency.id?.let {
-//        firestore.collection("dependencies").document(it).set(dependency)
-//        Log.d("Update Dependency", dependency.toString())
-//    }
-//}
 
 // firebase delete dep
 fun deleteDependencyFromFirestore(documentId: String, firestore: FirebaseFirestore, bookViewModel: BookViewModel, userId: String) {
@@ -642,11 +617,11 @@ fun addDependencyToFirestore(
                                     //bookViewModel.fetchDependenciesWithDetails(dependency.dependencyId!!)
                                 }
                                 .addOnFailureListener { e ->
-                                    Log.e("Create Dependency Error", "Failed to create dependency: ${e.message}")
-                                    Toast.makeText(context, "Failed to add dependency. Try again.", Toast.LENGTH_SHORT).show()
+                                    Log.e("Create Dependent Error", "Failed to create dependent: ${e.message}")
+                                    Toast.makeText(context, "Failed to add dependent. Try again.", Toast.LENGTH_SHORT).show()
                                 }
                         } else {
-                            Toast.makeText(context, "User is already a part of your dependency list!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "User is already a part of your dependent list!", Toast.LENGTH_SHORT).show()
                         }
                     }
             }
@@ -661,30 +636,14 @@ fun updateDependencyRelationship(documentId: String, newRelationship: String, fi
     firestore.collection("dependencies").document(documentId)
         .update("relationship", newRelationship)
         .addOnSuccessListener {
-            Log.d("Update Dependency", "Relationship with $documentId updated successfully to: $newRelationship")
+            Log.d("Update Dependent", "Relationship with $documentId updated successfully to: $newRelationship")
             bookViewModel.fetchDependenciesWithDetails(userId)
             Toast.makeText(context, "Successfully Updated Relationship", Toast.LENGTH_SHORT).show()
         }
         .addOnFailureListener { e ->
-            Log.e("Update Dependency Error", "Failed to update relationship: ${e.message}")
+            Log.e("Update Dependent Error", "Failed to update relationship: ${e.message}")
         }
 }
-//fun getDependencyDetails(userId: String, firestore: FirebaseFirestore, onResult: (List<DependencyData>) -> Unit) {
-//    firestore.collection("dependencies")
-//        .whereEqualTo("userId", userId)
-//        .get()
-//        .addOnSuccessListener { result ->
-//            val dependencies = result.documents.mapNotNull { doc ->
-//                doc.toObject(DependencyData::class.java)?.copy(dependencyId = doc.id)
-//            }
-//            onResult(dependencies)  // Pass the fetched dependencies to the callback
-//        }
-//        .addOnFailureListener { e ->
-//            Log.e("Firestore Error", "Failed to get dependencies: ${e.message}")
-//            onResult(emptyList())  // Return an empty list on failure
-//        }
-//}
-
 
 // info in the form
 data class DependencyData(
