@@ -51,6 +51,13 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
     var userType by remember { mutableStateOf<String?>(null) }
     val dependenciesWithDetails by bookViewModel.dependenciesWithDetails.collectAsState()
 
+    val currentDependentCount = remember(dependenciesWithDetails) {
+        dependenciesWithDetails.count {
+            (it.first.dependencyId != userId && userType == "Caregiver") ||
+                    (it.first.caregiverId != userId && userType == "User")
+        }
+    }
+
     LaunchedEffect(userId) {
         if (userId != null) {
             Log.d("Debug", "Fetching dependencies for user: $userId")
@@ -90,7 +97,8 @@ fun DependenciesPage(navController: NavController, authViewModel: AuthViewModel,
             if (userType == "Caregiver") {
                 Button(
                     onClick = { isAddingNew = true },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = currentDependentCount < 3
                 ) {
                     Text("Add Dependent")
                 }
@@ -514,6 +522,7 @@ fun DependencyEditDialog(
                             Text("Phone: ${user.phone}")
                             Text("Email: ${user.email}")
                             Spacer(modifier = Modifier.height(8.dp))
+                            //Text("UID: ${user.id}")
                             //Text("UID: ${user.id}")
                         }
                     }
