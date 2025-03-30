@@ -313,30 +313,61 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
 
 @Composable
 fun VitalsGrid(heartRate: String, steps: String, calories: String, dist: String) {
-    Column {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
         ) {
-            VitalCard(label = "Heart Rate", value = heartRate, unit = "Bpm")
-            VitalCard(label = "Steps", value = steps, unit = "Steps")
+            VitalCard(
+                label = "Heart Rate",
+                value = heartRate,
+                unit = "Bpm",
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(4.dp)
+            )
+            VitalCard(
+                label = "Steps",
+                value = steps,
+                unit = "Steps",
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(4.dp)
+            )
         }
-        Spacer(modifier = Modifier.height(8.dp))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
         ) {
-            VitalCard(label = "Calories", value = calories, unit = "kcal")
-            VitalCard(label = "Distance", value = dist, unit = "m")
+            VitalCard(
+                label = "Calories",
+                value = calories,
+                unit = "kcal",
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(4.dp)
+            )
+            VitalCard(
+                label = "Distance",
+                value = dist,
+                unit = "m",
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(4.dp)
+            )
         }
     }
 }
 
-
 @Composable
-fun VitalCard(label: String, value: String, unit: String) {
+fun VitalCard(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier
-            .padding(4.dp)
-            .size(width = 160.dp, height = 100.dp),
+        modifier = modifier
+            .height(100.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
