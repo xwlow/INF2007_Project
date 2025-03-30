@@ -56,6 +56,7 @@ import com.example.inf2007_project.R
 import com.example.inf2007_project.uam.AuthState
 import com.example.inf2007_project.uam.AuthViewModel
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -336,7 +337,8 @@ fun VitalCard(label: String, value: String, unit: String) {
         modifier = Modifier
             .padding(4.dp)
             .size(width = 160.dp, height = 100.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier
