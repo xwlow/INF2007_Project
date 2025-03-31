@@ -169,11 +169,14 @@ fun ClinicsDetail(
                         )
                     }
                 }
+
+                val waitDuration = (queueCount ?: 0) * 5
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = "Waiting Time", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(text = "30 minutes", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text(text = waitDuration.toString(), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Log.d("Queue Wait Time", waitDuration.toString())
                 }
             }
 
