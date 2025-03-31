@@ -30,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 @Composable
 fun ChatBotScreen(modifier: Modifier = Modifier, navController: NavController) {
     var chatMessages by remember { mutableStateOf(listOf<String>()) }
+    var conversationHistory by remember { mutableStateOf("") } // To store the ongoing conversation
     var userInput by remember { mutableStateOf(TextFieldValue("")) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -143,9 +144,15 @@ fun ChatBotScreen(modifier: Modifier = Modifier, navController: NavController) {
                             chatMessages = chatMessages + userMessage
                             userInput = TextFieldValue("")
 
+                            // Update conversation history with the user's message
+                            conversationHistory += "\nUser: $inputText"
+
                             coroutineScope.launch {
-                                val aiResponse = getAIResponseSync(inputText)
+                                val aiResponse = getAIResponseSync(inputText, conversationHistory)
                                 chatMessages = chatMessages + "AI 🤖: $aiResponse"
+
+                                // Update conversation history with the AI's response
+                                conversationHistory += "\nAI: $aiResponse"
                             }
                         } else {
                             Toast.makeText(context, "Enter a message!", Toast.LENGTH_SHORT).show()
@@ -163,18 +170,23 @@ fun ChatBotScreen(modifier: Modifier = Modifier, navController: NavController) {
     }
 }
 
-// Function to Call Gemini AI API
-fun getAIResponseSync(prompt: String): String {
+// Function to Call Gemini AI API with conversation history
+fun getAIResponseSync(prompt: String, conversationHistory: String): String {
     val apiKey = "AIzaSyB29zHV1-Muk5o5_M_UGajLAv1krEufxkY"  // Replace with your actual Gemini API key
 
     val context = """
         Provide solutions to general medical enquiries, shorten the text but still inform user to consult a doctor and not trust everything you generate, 
         try to be more friendly and not so in your face, try to make it seem like a casual conversation, 
-        be friendly and try not to say hey every message 
+        be friendly and try not to say hey every message. 
+        
+        Also if anyone comes looking for mental health advice please try to be empathetic and provide necessary assistance, assume that the user is currently 
+        living in Singapore and help to provide several helplines if they require it
+        
+        Here is the conversation history so far:
+        $conversationHistory
+        
+        Please respond to the user's latest message.
     """.trimIndent()
-
-    // Combine the context and user query to form the prompt
-    val combinedPrompt = "$context\n\n$prompt"
 
     return try {
         val model = GenerativeModel(
@@ -182,7 +194,7 @@ fun getAIResponseSync(prompt: String): String {
             apiKey = apiKey
         )
         runBlocking {
-            val response = model.generateContent(content { text(combinedPrompt) })
+            val response = model.generateContent(content { text(context) })
             response.text ?: "I'm not sure how to respond to that!"
         }
     } catch (e: Exception) {

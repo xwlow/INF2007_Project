@@ -336,7 +336,7 @@ fun DependencyEditDialog(
     val nricRegex = Regex("^[A-Za-z]\\d{7}[A-Za-z]$")
     var user = FirebaseAuth.getInstance().currentUser
 
-    val relationshipType = listOf("Child", "Cousin", "Friend")
+    val relationshipType = listOf("Parent", "Sibling","Child", "Grandchild", "Cousin", "Friend", "Helper")
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
 
     val icon = if (mExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown

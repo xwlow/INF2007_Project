@@ -107,13 +107,6 @@ class MainActivity : ComponentActivity() {
             val snapshot = fireStoreRef.get().await()
             val status = snapshot.getString("status")
 
-            withContext(Dispatchers.Main) {
-                if (status == "connected") {
-                    Toast.makeText(context, "Firestore connection successful!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Firestore connection failed!", Toast.LENGTH_SHORT).show()
-                }
-            }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()

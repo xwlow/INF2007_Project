@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.*
@@ -177,7 +180,7 @@ fun DocumentItem(title: String, subtitle: String, id: String, navController: Nav
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.ThumbUp,
+                imageVector = Icons.Default.Email,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )
@@ -227,7 +230,7 @@ fun NoteItem(title: String, subtitle: String, id: String, navController: NavCont
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.ThumbUp,
+                imageVector = Icons.Default.Menu,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )
