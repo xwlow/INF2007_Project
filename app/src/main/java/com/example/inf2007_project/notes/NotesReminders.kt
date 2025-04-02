@@ -91,7 +91,7 @@ fun NotesRemindersPage(modifier: Modifier = Modifier, navController: NavControll
                 .padding(16.dp)
         ) {
             Text(
-                text = "Notes, Documents and Reminders",
+                text = "Notes & Documents Reminders",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 16.dp)
             )

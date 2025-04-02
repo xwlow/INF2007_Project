@@ -63,7 +63,6 @@ fun ProfilePage(
         when (authState.value) {
             is AuthState.Unauthenticated -> {
                 navController.navigate("login")
-                Toast.makeText(context, "Profile Page", Toast.LENGTH_SHORT).show()
             }
             else -> Unit
         }
