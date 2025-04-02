@@ -285,7 +285,7 @@ fun HomePage(modifier: Modifier = Modifier, navController: NavController, authVi
                         contentDescription = "Profile Image",
                         modifier = Modifier.size(48.dp).padding(end = 8.dp)
                     )
-                    Text("Hello!\n ${username.value}", fontSize = 24.sp)
+                    Text("Hello!\n${username.value}", fontSize = 24.sp)
                 }
                 Row {
 //                    IconButton(onClick = { /* Search Action */ }) {

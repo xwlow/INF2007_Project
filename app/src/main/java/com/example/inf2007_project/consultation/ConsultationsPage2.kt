@@ -126,7 +126,7 @@ fun ConsultationsPage2(modifier: Modifier = Modifier, navController : NavControl
                                 // Book an consultation Btn
                                 Button(
                                     onClick = {
-                                        navController.navigate("clinicsTest")
+                                        navController.navigate("clinics")
                                     }, modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(text = "Book a Consultation")
