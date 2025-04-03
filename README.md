@@ -1,6 +1,6 @@
 # INF2007_Project
 
-## 🩺 HealthCare Application
+## 🩺 Health+
 
 Our mobile application is designed to prioritize **accessibility and simplicity**, especially for **elderly individuals** and their **caregivers**. It offers features that provide clear, concise information and easy access to healthcare services.
 
